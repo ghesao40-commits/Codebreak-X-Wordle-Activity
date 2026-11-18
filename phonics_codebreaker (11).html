@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phonics Codebreaker • 特務發音破譯</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Quicksand (ESL-friendly rounded), Noto Sans TC (Traditional Chinese), JetBrains Mono (Spy badges/counters) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=Quicksand:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --font-main: 'Quicksand', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    /* Deep midnight navy tactical console background with subtle blueprint/radar grid */
+    body {
+      font-family: var(--font-main);
+      background-color: #0F172A;
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.14) 0%, transparent 42%),
+        radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.1) 0%, transparent 45%),
+        linear-gradient(rgba(56, 189, 248, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.055) 1px, transparent 1px),
+        linear-gradient(160deg, #0F172A 0%, #1E293B 100%);
+      background-size: 100% 100%, 100% 100%, 34px 34px, 34px 34px, 100% 100%;
+      min-height: 100vh;
+      color: #F8FAFC;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+
+    .font-spy {
+      font-family: var(--font-mono);
+    }
+
+    /* Sleek dark slate mission control panels */
+    .spy-panel {
+      background-color: rgba(30, 41, 59, 0.94);
+      border: 2px solid #334155;
+      box-shadow: 0 10px 28px rgba(2, 6, 23, 0.42), inset 0 1px 0 rgba(148, 163, 184, 0.1);
+    }
+
+    /* Chunky tactile flat-bottom-border console buttons */
+    .btn-tactile {
+      transition: transform 0.1s ease, filter 0.15s ease, background-color 0.15s ease;
+      user-select: none;
+    }
+    .btn-tactile:active:not(:disabled) {
+      transform: translateY(3px);
+    }
+
+    /* High-contrast Secret Agent Keycards for maximum phonics readability */
+    .keycard {
+      transition: transform 0.1s ease, opacity 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+      user-select: none;
+    }
+    .keycard:active:not(.keycard-used) {
+      transform: translateY(3px);
+    }
+    .keycard-used {
+      opacity: 0.36;
+      background-color: #CBD5E1 !important;
+      border-color: #64748B !important;
+      border-bottom-color: #475569 !important;
+      cursor: not-allowed !important;
+      transform: none !important;
+    }
+
+    /* Animations */
+    @keyframes popIn {
+      0% { transform: scale(0.92); opacity: 0; }
+      70% { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: popIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .animate-shake {
+      animation: shake 0.34s ease-in-out;
+    }
+
+    @keyframes speakerPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .speaking-pulse {
+      animation: speakerPulse 0.38s ease-in-out;
+    }
+
+    @keyframes floatTrophy {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-trophy {
+      animation: floatTrophy 1.8s ease-in-out infinite;
+    }
+
+    /* Subtle dark scrollbar for modals */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0F172A;
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-sky-400/30">
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 hidden"></canvas>
+
+  <!-- In-Game Toast Notifications (Never uses browser alert/confirm) -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md pointer-events-none flex flex-col items-center gap-2"></div>
+
+  <!-- Main App Wrapper -->
+  <div class="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6 pb-10">
+
+    <!-- =========================================================
+         1. COMPACT SINGLE HEADER ROW
+         ========================================================= -->
+    <header class="flex flex-wrap items-center justify-between gap-3 mb-3.5">
+      <!-- Left: Spy Icon + Title + TOP SECRET Badge -->
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-2xl sm:text-3xl leading-none" aria-hidden="true">🕵️</span>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+            <span class="text-sky-400">Phonics</span>
+            <span class="text-amber-400">Code</span><span class="text-emerald-400">breaker</span>
+          </h1>
+          <span class="font-spy text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/40 whitespace-nowrap">
+            TOP SECRET • 特務任務
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Compact Round Pill, Score Pill, and Discrete Gear Button -->
+      <div class="flex items-center gap-2 sm:gap-2.5 ml-auto">
+        <!-- Round Pill -->
+        <div class="px-3 py-1.5 rounded-2xl bg-slate-800/95 border-2 border-slate-700 border-b-4 border-b-sky-500/70 text-center leading-tight shadow-sm">
+          <div id="header-round-en" class="font-spy text-xs sm:text-sm font-bold text-sky-300 whitespace-nowrap">
+            Round 1 / 10
+          </div>
+          <div id="header-round-zh" class="text-[10px] sm:text-[11px] font-medium text-slate-400 whitespace-nowrap">
+            第 1 / 10 回合
+          </div>
+        </div>
+
+        <!-- Score Pill -->
+        <div class="px-3 py-1.5 rounded-2xl bg-slate-800/95 border-2 border-slate-700 border-b-4 border-b-amber-500/70 text-center leading-tight shadow-sm">
+          <div id="header-score-en" class="font-spy text-xs sm:text-sm font-bold text-amber-300 whitespace-nowrap">
+            ⭐ 0 / 10
+          </div>
+          <div class="text-[10px] sm:text-[11px] font-medium text-slate-400 whitespace-nowrap">
+            分數
+          </div>
+        </div>
+
+        <!-- Discrete Teacher Settings Gear Icon (Removed in Student Mode) -->
+        <button
+          id="settings-btn"
+          type="button"
+          title="Teacher Settings / 教師設定"
+          aria-label="Teacher Settings"
+          class="btn-tactile w-11 h-11 rounded-2xl bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 border-b-4 border-b-slate-900 flex items-center justify-center text-xl text-slate-200 hover:text-sky-300 shrink-0 shadow-sm"
+        >
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- =========================================================
+         2. COMPACT HORIZONTAL BILINGUAL COLOR LEGEND
+         ========================================================= -->
+    <section class="spy-panel rounded-2xl px-3 py-2.5 mb-5">
+      <div class="flex flex-wrap items-center justify-center sm:justify-around gap-2 sm:gap-4">
+        <!-- Emerald Green -->
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-400/40 text-xs sm:text-sm">
+          <span class="font-bold text-emerald-300">🟩 Right Spot</span>
+          <span class="text-emerald-200/80 text-xs font-medium">(位置對)</span>
+        </div>
+
+        <!-- Amber Yellow -->
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 border border-amber-400/40 text-xs sm:text-sm">
+          <span class="font-bold text-amber-300">🟨 Wrong Spot</span>
+          <span class="text-amber-200/80 text-xs font-medium">(位置錯)</span>
+        </div>
+
+        <!-- Coral/Crimson Red -->
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-red-500/15 border border-red-400/40 text-xs sm:text-sm">
+          <span class="font-bold text-red-300">🟥 Not in Code</span>
+          <span class="text-red-200/80 text-xs font-medium">(沒有這個字)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         3. RESPONSIVE TWO-COLUMN MAIN GRID
+         ========================================================= -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+      <!-- LEFT COLUMN: Current Guess Panel + Word Bank Panel -->
+      <div class="lg:col-span-7 space-y-5">
+
+        <!-- a) CURRENT GUESS PANEL -->
+        <section class="spy-panel rounded-3xl p-4 sm:p-5 border-t-sky-400/50">
+          <!-- Panel Header -->
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-[0_0_8px_#38BDF8]" aria-hidden="true"></span>
+              <h2 class="text-base sm:text-lg font-bold text-white leading-tight">
+                Current Guess <span class="text-xs sm:text-sm font-medium text-slate-400">(目前猜測)</span>
+              </h2>
+            </div>
+
+            <span
+              id="try-badge"
+              class="font-spy px-3 py-1 rounded-xl bg-slate-900/90 border border-sky-400/40 text-sky-300 font-bold text-xs sm:text-sm whitespace-nowrap"
+            >
+              Try 1 / 6 (第 1 / 6 次)
+            </span>
+          </div>
+
+          <!-- 3 Codebreaker Terminal Input Slots -->
+          <div id="guess-slots" class="grid grid-cols-3 gap-2.5 sm:gap-3 mb-4">
+            <!-- Dynamically rendered 3 slots -->
+          </div>
+
+          <!-- Action Buttons: Clear + Check Answer -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+            <!-- Clear (Amber/Slate) -->
+            <button
+              id="clear-btn"
+              type="button"
+              class="btn-tactile sm:col-span-4 py-3 px-4 rounded-2xl bg-slate-700 hover:bg-slate-600 text-amber-200 border-2 border-slate-600 border-b-4 border-b-slate-900 font-bold flex flex-col items-center justify-center leading-tight"
+            >
+              <span class="text-sm sm:text-base">Clear</span>
+              <span class="text-xs font-medium text-slate-300">(清除)</span>
+            </button>
+
+            <!-- Check Answer (Emerald Green) -->
+            <button
+              id="check-btn"
+              type="button"
+              class="btn-tactile sm:col-span-8 py-3 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-2 border-emerald-400 border-b-4 border-b-emerald-700 font-bold flex flex-col items-center justify-center leading-tight shadow-[0_0_18px_rgba(16,185,129,0.22)]"
+            >
+              <span class="text-base sm:text-lg">Check Answer</span>
+              <span class="text-xs font-semibold text-emerald-950/80">(檢查答案)</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- b) WORD BANK PANEL -->
+        <section class="spy-panel rounded-3xl p-4 sm:p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3.5">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" aria-hidden="true"></span>
+              <h2 class="text-base sm:text-lg font-bold text-white leading-tight">
+                Word Bank <span class="text-xs sm:text-sm font-medium text-slate-400">(單字庫)</span>
+              </h2>
+            </div>
+            <p class="text-[11px] sm:text-xs font-medium text-sky-300 bg-sky-500/10 border border-sky-400/25 px-3 py-1 rounded-xl">
+              Tap word to pick • Tap 🔊 to listen <span class="text-slate-300">(點單字填入 • 點喇叭聽發音)</span>
+            </p>
+          </div>
+
+          <!-- Adaptive Grid of Crisp White Secret Agent Keycards -->
+          <div id="word-bank-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+            <!-- Dynamically rendered keycards -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Guess History Panel -->
+      <div class="lg:col-span-5">
+        <section class="spy-panel rounded-3xl p-4 sm:p-5 min-h-[260px]">
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10B981]" aria-hidden="true"></span>
+              <h2 class="text-base sm:text-lg font-bold text-white leading-tight">
+                Guess History <span class="text-xs sm:text-sm font-medium text-slate-400">(猜測紀錄)</span>
+              </h2>
+            </div>
+            <span id="history-count-pill" class="font-spy text-xs font-bold px-2.5 py-1 rounded-xl bg-slate-900/90 border border-slate-700 text-slate-300">
+              0 / 6
+            </span>
+          </div>
+
+          <!-- Submitted Attempt Rows -->
+          <div id="guess-history-list" class="space-y-2.5">
+            <!-- Dynamically rendered -->
+          </div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- =========================================================
+       MODAL 1: BETWEEN-ROUND MODAL (WIN / OUT OF TRIES)
+       ========================================================= -->
+  <div id="round-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-4">
+    <div class="spy-panel w-full max-w-md rounded-3xl border-sky-400/50 p-6 text-center animate-pop">
+      <div id="round-modal-badge" class="font-spy inline-block text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-sky-500/15 text-sky-300 border border-sky-400/40 mb-3">
+        MISSION 01 / 10
+      </div>
+
+      <div id="round-modal-emoji" class="text-5xl mb-2">🎉</div>
+
+      <h3 id="round-modal-title-en" class="text-2xl font-bold text-white leading-tight">
+        Mission Accomplished! +1 Point
+      </h3>
+      <p id="round-modal-title-zh" class="text-sm font-medium text-sky-300 mt-1 mb-4">
+        (任務完成！得 1 分)
+      </p>
+
+      <!-- Secret Code Reveal with Clickable Audio Buttons -->
+      <div class="bg-slate-900/80 rounded-2xl border border-slate-700 p-3.5 mb-5">
+        <p class="text-xs font-bold text-slate-300 mb-2.5">
+          Secret Code <span class="text-slate-400">(正確密碼)</span> • Tap 🔊 to listen
+        </p>
+        <div id="round-modal-code" class="grid grid-cols-3 gap-2">
+          <!-- Dynamically rendered 3 keycards -->
+        </div>
+      </div>
+
+      <!-- Next Round / See Final Score Button -->
+      <button
+        id="round-modal-next-btn"
+        type="button"
+        class="btn-tactile w-full py-3.5 px-5 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 border-2 border-sky-300 border-b-4 border-b-sky-700 font-bold flex flex-col items-center justify-center leading-tight shadow-[0_0_18px_rgba(56,189,248,0.28)]"
+      >
+        <span id="round-modal-next-en" class="text-lg">Next Round ➡️</span>
+        <span id="round-modal-next-zh" class="text-xs font-semibold text-slate-900/80">(下一回合)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 2: FINAL 10-ROUND SUMMARY MODAL
+       ========================================================= -->
+  <div id="summary-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
+    <div class="spy-panel w-full max-w-md rounded-3xl border-amber-400/50 p-6 text-center animate-pop">
+      <div class="font-spy inline-block text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/40 mb-2">
+        MISSION DEBRIEF • 任務總結
+      </div>
+
+      <div class="text-6xl mb-2 animate-trophy">🏆</div>
+
+      <div id="summary-stars" class="text-3xl tracking-widest mb-1">⭐⭐⭐</div>
+
+      <h3 id="summary-rank-en" class="text-2xl sm:text-3xl font-bold text-white leading-tight">
+        Master Spy
+      </h3>
+      <p id="summary-rank-zh" class="text-sm font-medium text-amber-300 mt-0.5 mb-4">
+        超級特務
+      </p>
+
+      <!-- Final Score Box -->
+      <div class="bg-slate-900/85 rounded-2xl border border-slate-700 py-3.5 px-4 mb-4">
+        <div class="font-spy text-xs uppercase tracking-wider text-slate-400 mb-1">FINAL SCORE • 總分</div>
+        <div id="summary-score-text" class="font-spy text-3xl sm:text-4xl font-bold text-sky-300">
+          10 / 10
+        </div>
+
+        <!-- 10-Round Visual Pass/Fail Badge Strip -->
+        <div class="mt-3.5 pt-3 border-t border-slate-800">
+          <div class="text-[11px] font-medium text-slate-400 mb-2">
+            Rounds 1–10 Log (10 回合紀錄)
+          </div>
+          <div id="summary-round-strip" class="grid grid-cols-5 gap-1.5">
+            <!-- Dynamically rendered 10 round badges -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Play New 10-Round Game Button -->
+      <button
+        id="play-again-btn"
+        type="button"
+        class="btn-tactile w-full py-3.5 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-2 border-emerald-400 border-b-4 border-b-emerald-700 font-bold flex flex-col items-center justify-center leading-tight shadow-[0_0_18px_rgba(16,185,129,0.25)]"
+      >
+        <span class="text-base sm:text-lg">Play New 10-Round Game</span>
+        <span class="text-xs font-semibold text-emerald-950/80">(重新挑戰 10 回合)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 3: TEACHER SETTINGS MODAL (REMOVED IN STUDENT MODE)
+       ========================================================= -->
+  <div id="settings-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4">
+    <div class="spy-panel w-full max-w-lg max-h-[92vh] rounded-3xl border-sky-400/40 flex flex-col overflow-hidden animate-pop">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700 bg-slate-900/75">
+        <div>
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span>⚙️ Teacher Settings</span>
+            <span id="settings-word-count" class="font-spy text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/40">
+              6 / 20
+            </span>
+          </h3>
+          <p class="text-xs text-slate-400">
+            教師設定 • 自訂單字庫 (4–20 words)
+          </p>
+        </div>
+        <button
+          id="close-settings-btn"
+          type="button"
+          aria-label="Close Settings"
+          class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold flex items-center justify-center text-lg"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="p-5 overflow-y-auto custom-scroll space-y-4">
+        <!-- Dynamic Word Inputs -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-2.5">
+            <label class="text-sm font-bold text-slate-200">
+              Custom Word Bank <span class="text-xs font-normal text-slate-400">(自訂單字)</span>
+            </label>
+            <button
+              id="add-word-btn"
+              type="button"
+              class="btn-tactile text-xs font-bold px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/50 border-b-2 border-b-sky-600"
+            >
+              + Add Word (新增單字)
+            </button>
+          </div>
+
+          <div id="settings-word-inputs" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Dynamically rendered inputs -->
+          </div>
+        </div>
+
+        <!-- Generate Student Link Box -->
+        <div class="bg-slate-900/85 rounded-2xl border border-amber-400/40 p-3.5 space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="text-sm font-bold text-amber-300">Student Mode Share Link</div>
+              <div class="text-xs text-slate-400">自動載入自訂單字並隱藏教師設定</div>
+            </div>
+            <button
+              id="generate-link-btn"
+              type="button"
+              class="btn-tactile px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-2 border-amber-300 border-b-4 border-b-amber-600 font-bold text-xs sm:text-sm"
+            >
+              🔗 Generate Student Link (產生學生連結)
+            </button>
+          </div>
+
+          <!-- Fallback Copyable URL Box -->
+          <div id="student-link-box" class="hidden space-y-1.5">
+            <div class="flex gap-1.5">
+              <input
+                id="student-link-input"
+                type="text"
+                readonly
+                class="w-full text-xs bg-slate-950 border border-amber-400/40 rounded-xl px-3 py-2 text-sky-200 font-spy focus:outline-none"
+              />
+              <button
+                id="copy-link-fallback-btn"
+                type="button"
+                class="btn-tactile shrink-0 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-400/50 text-amber-300 font-bold text-xs"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-5 py-4 border-t border-slate-700 bg-slate-900/75 flex flex-col sm:flex-row gap-2.5">
+        <button
+          id="reset-defaults-btn"
+          type="button"
+          class="btn-tactile sm:w-auto px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border-2 border-slate-600 border-b-4 border-b-slate-950 font-bold text-xs sm:text-sm"
+        >
+          Default 6 Words (預設)
+        </button>
+        <button
+          id="save-settings-btn"
+          type="button"
+          class="btn-tactile flex-1 py-2.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-2 border-emerald-400 border-b-4 border-b-emerald-700 font-bold text-sm flex flex-col items-center justify-center leading-tight"
+        >
+          <span>Save & Restart Game</span>
+          <span class="text-[11px] font-semibold text-emerald-950/80">(儲存並重新開始)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       GAME ENGINE + BUILT-IN DEVICE TTS + FIREBASE PERSISTENCE
+       ========================================================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // ---------------------------------------------------------
+    // CONSTANTS & GAME STATE
+    // ---------------------------------------------------------
+    const DEFAULT_WORDS = ['cat', 'hat', 'bat', 'rat', 'mat', 'sat'];
+    const MIN_WORDS = 4;
+    const MAX_WORDS = 20;
+    const CODE_LENGTH = 3;
+    const MAX_TRIES = 6;
+    const MAX_ROUNDS = 10;
+
+    let wordBank = [...DEFAULT_WORDS];
+    let isStudentMode = false;
+
+    // 10-Round Session State
+    let currentRound = 1;
+    let score = 0;
+    let roundResults = []; // Array of booleans (true = cracked, false = missed)
+    let secretCode = [];
+    let currentGuess = [null, null, null];
+    let guessHistory = []; // Array of { words: string[], feedback: ('green'|'yellow'|'red')[] }
+    let isRoundOver = false;
+
+    // Teacher Settings Editor State
+    let editorWords = [...DEFAULT_WORDS];
+
+    // Firebase State
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'phonics-codebreaker-default';
+
+    // Cached Natural English Voice
+    let preferredVoice = null;
+
+    // ---------------------------------------------------------
+    // DOM REFERENCES
+    // ---------------------------------------------------------
+    const headerRoundEn = document.getElementById('header-round-en');
+    const headerRoundZh = document.getElementById('header-round-zh');
+    const headerScoreEn = document.getElementById('header-score-en');
+    const settingsBtn = document.getElementById('settings-btn');
+
+    const tryBadge = document.getElementById('try-badge');
+    const guessSlotsEl = document.getElementById('guess-slots');
+    const checkBtn = document.getElementById('check-btn');
+    const clearBtn = document.getElementById('clear-btn');
+
+    const wordBankGrid = document.getElementById('word-bank-grid');
+    const guessHistoryList = document.getElementById('guess-history-list');
+    const historyCountPill = document.getElementById('history-count-pill');
+
+    // Between-Round Modal
+    const roundModal = document.getElementById('round-modal');
+    const roundModalBadge = document.getElementById('round-modal-badge');
+    const roundModalEmoji = document.getElementById('round-modal-emoji');
+    const roundModalTitleEn = document.getElementById('round-modal-title-en');
+    const roundModalTitleZh = document.getElementById('round-modal-title-zh');
+    const roundModalCode = document.getElementById('round-modal-code');
+    const roundModalNextBtn = document.getElementById('round-modal-next-btn');
+    const roundModalNextEn = document.getElementById('round-modal-next-en');
+    const roundModalNextZh = document.getElementById('round-modal-next-zh');
+
+    // Final Summary Modal
+    const summaryModal = document.getElementById('summary-modal');
+    const summaryStars = document.getElementById('summary-stars');
+    const summaryRankEn = document.getElementById('summary-rank-en');
+    const summaryRankZh = document.getElementById('summary-rank-zh');
+    const summaryScoreText = document.getElementById('summary-score-text');
+    const summaryRoundStrip = document.getElementById('summary-round-strip');
+    const playAgainBtn = document.getElementById('play-again-btn');
+
+    // Teacher Settings Modal
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const settingsWordCount = document.getElementById('settings-word-count');
+    const settingsWordInputs = document.getElementById('settings-word-inputs');
+    const addWordBtn = document.getElementById('add-word-btn');
+    const generateLinkBtn = document.getElementById('generate-link-btn');
+    const studentLinkBox = document.getElementById('student-link-box');
+    const studentLinkInput = document.getElementById('student-link-input');
+    const copyLinkFallbackBtn = document.getElementById('copy-link-fallback-btn');
+    const resetDefaultsBtn = document.getElementById('reset-defaults-btn');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+
+    const toastContainer = document.getElementById('toast-container');
+
+    // ---------------------------------------------------------
+    // UTILITY HELPERS & TOAST NOTIFICATIONS
+    // ---------------------------------------------------------
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function showToast(enText, zhText = '', type = 'info') {
+      const toast = document.createElement('div');
+      const colorMap = {
+        success: 'bg-emerald-500 text-slate-950 border-emerald-700',
+        error: 'bg-red-500 text-white border-red-800',
+        warning: 'bg-amber-400 text-slate-950 border-amber-600',
+        info: 'bg-sky-500 text-slate-950 border-sky-700'
+      };
+      toast.className = `pointer-events-auto px-4 py-2.5 rounded-2xl border-b-4 shadow-xl text-center animate-pop ${colorMap[type] || colorMap.info}`;
+      toast.innerHTML = `
+        <div class="text-sm font-bold leading-snug">${escapeHtml(enText)}</div>
+        ${zhText ? `<div class="text-xs font-semibold opacity-90">${escapeHtml(zhText)}</div>` : ''}
+      `;
+      toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-8px)';
+        setTimeout(() => toast.remove(), 260);
+      }, 2400);
+    }
+
+    // Clipboard helper using execCommand for iframe compatibility
+    function copyTextToClipboard(text) {
+      try {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        temp.setAttribute('readonly', '');
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        document.body.appendChild(temp);
+        temp.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(temp);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // ---------------------------------------------------------
+    // BUILT-IN DEVICE TTS ONLY (NO EXTERNAL APIS)
+    // ---------------------------------------------------------
+    function selectBestEnglishVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+
+      // Prioritize natural-sounding built-in English voices across platforms
+      const priorityKeywords = [
+        'Microsoft Aria Online (Natural)',
+        'Microsoft Jenny Online (Natural)',
+        'Microsoft Ana Online (Natural)',
+        'Natural',
+        'Samantha',
+        'Ava',
+        'Alex',
+        'Google US English',
+        'Allison',
+        'Microsoft Aria',
+        'Microsoft Jenny',
+        'Karen',
+        'Daniel',
+        'Zoe'
+      ];
+
+      for (const keyword of priorityKeywords) {
+        const match = voices.find(
+          v => v.lang && v.lang.toLowerCase().startsWith('en') && v.name.toLowerCase().includes(keyword.toLowerCase())
+        );
+        if (match) return match;
+      }
+
+      // Fallback to any en-US voice, then any English voice
+      return (
+        voices.find(v => v.lang && v.lang.toLowerCase() === 'en-us') ||
+        voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en')) ||
+        null
+      );
+    }
+
+    if ('speechSynthesis' in window) {
+      preferredVoice = selectBestEnglishVoice();
+      window.speechSynthesis.onvoiceschanged = () => {
+        preferredVoice = selectBestEnglishVoice();
+      };
+    }
+
+    function speakWord(word, pulseEl = null) {
+      if (!word) return;
+      if (!('speechSynthesis' in window)) {
+        showToast('Speech is not supported on this browser.', '此瀏覽器不支援語音朗讀', 'warning');
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.85; // Clear, well-paced phonics pronunciation
+        utterance.pitch = 1.0;
+
+        if (!preferredVoice) {
+          preferredVoice = selectBestEnglishVoice();
+        }
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+        }
+
+        if (pulseEl) {
+          pulseEl.classList.remove('speaking-pulse');
+          void pulseEl.offsetWidth;
+          pulseEl.classList.add('speaking-pulse');
+        }
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('TTS error:', err);
+      }
+    }
+
+    // ---------------------------------------------------------
+    // FIREBASE CLOUD PERSISTENCE (STRICT PATHS & AUTH FIRST)
+    // ---------------------------------------------------------
+    async function initFirebaseAndLoadWords() {
+      if (isStudentMode) return;
+      if (typeof __firebase_config === 'undefined' || !__firebase_config) return;
+
+      try {
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        // RULE 3: Authenticate BEFORE any Firestore queries
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          const cred = await signInWithCustomToken(auth, __initial_auth_token);
+          currentUser = cred.user;
+        } else {
+          const cred = await signInAnonymously(auth);
+          currentUser = cred.user;
+        }
+
+        if (!currentUser) return;
+
+        // RULE 1: Strict private user path
+        const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'wordbank');
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const saved = snap.data().words;
+          if (Array.isArray(saved) && saved.length >= MIN_WORDS) {
+            wordBank = saved.slice(0, MAX_WORDS);
+            startNewSession();
+          }
+        }
+      } catch (err) {
+        console.warn('Firebase init skipped/failed:', err);
+      }
+    }
+
+    async function saveWordBankToCloud(words) {
+      if (!db || !currentUser) return false;
+      try {
+        const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'wordbank');
+        await setDoc(docRef, {
+          words,
+          updatedAt: Date.now()
+        });
+        return true;
+      } catch (err) {
+        console.warn('Cloud save failed:', err);
+        return false;
+      }
+    }
+
+    // ---------------------------------------------------------
+    // CORE 10-ROUND GAMEPLAY & SCORING LOGIC
+    // ---------------------------------------------------------
+    function generateUniqueSecretCode() {
+      // Guarantees 3 completely unique words (no repeats)
+      const pool = [...wordBank];
+      const code = [];
+      for (let i = 0; i < CODE_LENGTH; i++) {
+        const randIdx = Math.floor(Math.random() * pool.length);
+        code.push(pool.splice(randIdx, 1)[0]);
+      }
+      return code;
+    }
+
+    function startNewSession() {
+      currentRound = 1;
+      score = 0;
+      roundResults = [];
+      closeAllModals();
+      startRound();
+    }
+
+    function startRound() {
+      secretCode = generateUniqueSecretCode();
+      currentGuess = [null, null, null];
+      guessHistory = [];
+      isRoundOver = false;
+      renderAll();
+    }
+
+    function handleWordCardClick(word, speakerEl) {
+      if (isRoundOver) return;
+      if (currentGuess.includes(word)) return;
+
+      // Play pronunciation when picking a word
+      speakWord(word, speakerEl);
+
+      const emptyIndex = currentGuess.indexOf(null);
+      if (emptyIndex === -1) {
+        showToast('All 3 slots are full! Tap Check Answer.', '3 個密碼槽已滿！請按檢查答案', 'info');
+        return;
+      }
+
+      currentGuess[emptyIndex] = word;
+      renderGuessSlots();
+      renderWordBank();
+    }
+
+    function handleRemoveSlot(index) {
+      if (isRoundOver) return;
+      if (currentGuess[index] === null) return;
+      currentGuess[index] = null;
+      renderGuessSlots();
+      renderWordBank();
+    }
+
+    function handleClearGuess() {
+      if (isRoundOver) return;
+      currentGuess = [null, null, null];
+      renderGuessSlots();
+      renderWordBank();
+    }
+
+    function handleCheckAnswer() {
+      if (isRoundOver) return;
+
+      if (currentGuess.includes(null)) {
+        guessSlotsEl.classList.remove('animate-shake');
+        void guessSlotsEl.offsetWidth;
+        guessSlotsEl.classList.add('animate-shake');
+        showToast('Pick 3 words to unlock the code!', '請先選出 3 個單字！', 'warning');
+        return;
+      }
+
+      // Wordle-style evaluation: Green (exact), Yellow (in code, wrong spot), Red (not in code)
+      const feedback = currentGuess.map((word, idx) => {
+        if (word === secretCode[idx]) return 'green';
+        if (secretCode.includes(word)) return 'yellow';
+        return 'red';
+      });
+
+      guessHistory.push({
+        words: [...currentGuess],
+        feedback
+      });
+
+      const isWin = feedback.every(f => f === 'green');
+      currentGuess = [null, null, null];
+
+      if (isWin) {
+        isRoundOver = true;
+        score += 1;
+        roundResults.push(true);
+        renderAll();
+        launchConfetti();
+        setTimeout(() => openRoundModal(true), 240);
+      } else if (guessHistory.length >= MAX_TRIES) {
+        isRoundOver = true;
+        roundResults.push(false);
+        renderAll();
+        setTimeout(() => openRoundModal(false), 240);
+      } else {
+        renderAll();
+      }
+    }
+
+    function handleRoundModalContinue() {
+      roundModal.classList.add('hidden');
+      roundModal.classList.remove('flex');
+
+      if (currentRound < MAX_ROUNDS) {
+        currentRound += 1;
+        startRound();
+      } else {
+        openSummaryModal();
+      }
+    }
+
+    // ---------------------------------------------------------
+    // RENDERING FUNCTIONS
+    // ---------------------------------------------------------
+    function renderAll() {
+      renderHeaderPills();
+      renderTryBadge();
+      renderGuessSlots();
+      renderWordBank();
+      renderGuessHistory();
+    }
+
+    function renderHeaderPills() {
+      headerRoundEn.textContent = `Round ${currentRound} / ${MAX_ROUNDS}`;
+      headerRoundZh.textContent = `第 ${currentRound} / ${MAX_ROUNDS} 回合`;
+      headerScoreEn.textContent = `⭐ ${score} / ${MAX_ROUNDS}`;
+    }
+
+    function renderTryBadge() {
+      const displayTry = Math.min(guessHistory.length + 1, MAX_TRIES);
+      tryBadge.textContent = `Try ${displayTry} / ${MAX_TRIES} (第 ${displayTry} / ${MAX_TRIES} 次)`;
+    }
+
+    function renderGuessSlots() {
+      guessSlotsEl.innerHTML = '';
+
+      currentGuess.forEach((word, index) => {
+        const slot = document.createElement('button');
+        slot.type = 'button';
+
+        if (word) {
+          // Filled codebreaker terminal slot (clickable to remove)
+          slot.className =
+            'btn-tactile relative h-16 sm:h-20 rounded-2xl bg-slate-50 border-2 border-sky-400 border-b-4 border-b-sky-600 text-slate-900 font-bold text-lg sm:text-xl flex flex-col items-center justify-center px-2 shadow-[0_0_16px_rgba(56,189,248,0.28)] animate-pop';
+          slot.innerHTML = `
+            <span class="truncate max-w-full">${escapeHtml(word)}</span>
+            <span class="text-[10px] font-semibold text-sky-600 mt-0.5">Tap to clear</span>
+            <span class="absolute top-1.5 right-2 text-xs font-bold text-slate-400">✕</span>
+          `;
+          slot.addEventListener('click', () => handleRemoveSlot(index));
+        } else {
+          // Empty codebreaker terminal slot
+          slot.className =
+            'h-16 sm:h-20 rounded-2xl bg-slate-900/80 border-2 border-dashed border-slate-600 text-slate-400 flex flex-col items-center justify-center px-2 leading-tight';
+          slot.innerHTML = `
+            <span class="font-spy text-xs sm:text-sm font-bold text-sky-400/80">Slot ${index + 1}</span>
+            <span class="text-[11px] font-medium text-slate-500 mt-0.5">密碼 ${index + 1}</span>
+          `;
+          slot.disabled = true;
+        }
+
+        guessSlotsEl.appendChild(slot);
+      });
+    }
+
+    function renderWordBank() {
+      // Adaptive columns for larger custom word banks
+      wordBankGrid.className =
+        wordBank.length >= 13
+          ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5'
+          : 'grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3';
+
+      wordBankGrid.innerHTML = '';
+
+      wordBank.forEach((word) => {
+        const isUsed = currentGuess.includes(word);
+
+        // Crisp bright off-white Secret Agent Keycard with dark navy text & tactile cyan bottom border
+        const card = document.createElement('div');
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', isUsed ? '-1' : '0');
+        card.className = `keycard flex items-center justify-between gap-2 pl-3.5 pr-2.5 py-3 rounded-2xl bg-slate-50 hover:bg-white border-2 border-sky-200 border-b-4 border-b-sky-500 shadow-sm cursor-pointer ${
+          isUsed ? 'keycard-used' : ''
+        }`;
+
+        // Large bold dark navy English phonics word
+        const wordLabel = document.createElement('span');
+        wordLabel.className = 'text-lg sm:text-xl font-bold text-slate-900 truncate select-none';
+        wordLabel.textContent = word;
+
+        // Distinct circular speaker button on the right
+        const speakerBtn = document.createElement('button');
+        speakerBtn.type = 'button';
+        speakerBtn.setAttribute('aria-label', `Listen to ${word}`);
+        speakerBtn.title = `Listen / 聽發音: ${word}`;
+        speakerBtn.className =
+          'shrink-0 w-9 h-9 rounded-full bg-sky-100 hover:bg-sky-200 active:bg-sky-300 border border-sky-300 text-sky-800 flex items-center justify-center text-base transition-colors';
+        speakerBtn.textContent = '🔊';
+
+        // Tapping 🔊 only plays audio (does not add word to guess)
+        speakerBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          speakWord(word, speakerBtn);
+        });
+
+        card.appendChild(wordLabel);
+        card.appendChild(speakerBtn);
+
+        // Tapping the keycard plays audio and adds word to next slot
+        card.addEventListener('click', () => {
+          if (!isUsed) handleWordCardClick(word, speakerBtn);
+        });
+
+        card.addEventListener('keydown', (e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && !isUsed) {
+            e.preventDefault();
+            handleWordCardClick(word, speakerBtn);
+          }
+        });
+
+        wordBankGrid.appendChild(card);
+      });
+    }
+
+    function renderGuessHistory() {
+      historyCountPill.textContent = `${guessHistory.length} / ${MAX_TRIES}`;
+      guessHistoryList.innerHTML = '';
+
+      if (guessHistory.length === 0) {
+        guessHistoryList.innerHTML = `
+          <div class="text-center py-10 px-4 rounded-2xl bg-slate-900/65 border-2 border-dashed border-slate-700 text-slate-400">
+            <div class="text-3xl mb-1.5">📡</div>
+            <div class="text-sm font-bold text-slate-300">No guesses yet, Agent!</div>
+            <div class="text-xs text-slate-400 mt-0.5">還沒開始猜測喔！選出 3 個單字按「檢查答案」吧！</div>
+          </div>
+        `;
+        return;
+      }
+
+      guessHistory.forEach((entry, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 animate-pop';
+
+        // Attempt badge (#1, #2, ...)
+        const numBadge = document.createElement('div');
+        numBadge.className =
+          'font-spy w-7 h-7 rounded-xl bg-slate-900 border border-slate-700 text-sky-300 font-bold text-xs flex items-center justify-center shrink-0';
+        numBadge.textContent = `#${idx + 1}`;
+
+        // 3 color-coded spy tiles
+        const chipsWrap = document.createElement('div');
+        chipsWrap.className = 'grid grid-cols-3 gap-1.5 sm:gap-2 flex-1';
+
+        entry.words.forEach((word, i) => {
+          const status = entry.feedback[i];
+          const tile = document.createElement('div');
+          let colorClasses = '';
+
+          if (status === 'green') {
+            colorClasses = 'bg-[#10B981] border-b-4 border-emerald-800 text-slate-950';
+          } else if (status === 'yellow') {
+            colorClasses = 'bg-[#F59E0B] border-b-4 border-amber-800 text-slate-950';
+          } else {
+            colorClasses = 'bg-[#EF4444] border-b-4 border-red-800 text-white';
+          }
+
+          tile.className = `py-2 px-1.5 rounded-xl font-bold text-center text-sm sm:text-base truncate shadow-sm ${colorClasses}`;
+          tile.textContent = word;
+          chipsWrap.appendChild(tile);
+        });
+
+        row.appendChild(numBadge);
+        row.appendChild(chipsWrap);
+        guessHistoryList.appendChild(row);
+      });
+    }
+
+    // ---------------------------------------------------------
+    // MODALS (BETWEEN-ROUND, FINAL SUMMARY, TEACHER SETTINGS)
+    // ---------------------------------------------------------
+    function closeAllModals() {
+      [roundModal, summaryModal, settingsModal].forEach(m => {
+        if (!m) return;
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+      });
+    }
+
+    function openRoundModal(isWin) {
+      const paddedRound = String(currentRound).padStart(2, '0');
+      roundModalBadge.textContent = `MISSION ${paddedRound} / ${MAX_ROUNDS}`;
+
+      if (isWin) {
+        roundModalEmoji.textContent = '🎉';
+        roundModalTitleEn.textContent = 'Mission Accomplished! +1 Point';
+        roundModalTitleZh.textContent = '(任務完成！得 1 分)';
+      } else {
+        roundModalEmoji.textContent = '🕵️';
+        roundModalTitleEn.textContent = 'Nice Try, Agent!';
+        roundModalTitleZh.textContent = '(再接再厲，小特務！)';
+      }
+
+      // Render 3-word Secret Code with clickable 🔊 audio buttons
+      roundModalCode.innerHTML = '';
+      secretCode.forEach(word => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className =
+          'btn-tactile flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-2xl bg-slate-50 hover:bg-white border-2 border-emerald-400 border-b-4 border-b-emerald-600 text-slate-900';
+        card.innerHTML = `
+          <span class="font-bold text-base sm:text-lg truncate max-w-full">${escapeHtml(word)}</span>
+          <span class="w-7 h-7 rounded-full bg-sky-100 border border-sky-300 text-sky-800 flex items-center justify-center text-xs">🔊</span>
+        `;
+        card.addEventListener('click', () => speakWord(word, card));
+        roundModalCode.appendChild(card);
+      });
+
+      if (currentRound < MAX_ROUNDS) {
+        roundModalNextBtn.className =
+          'btn-tactile w-full py-3.5 px-5 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 border-2 border-sky-300 border-b-4 border-b-sky-700 font-bold flex flex-col items-center justify-center leading-tight shadow-[0_0_18px_rgba(56,189,248,0.28)]';
+        roundModalNextEn.textContent = 'Next Round ➡️';
+        roundModalNextZh.textContent = '(下一回合)';
+      } else {
+        roundModalNextBtn.className =
+          'btn-tactile w-full py-3.5 px-5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-2 border-amber-300 border-b-4 border-b-amber-600 font-bold flex flex-col items-center justify-center leading-tight shadow-[0_0_18px_rgba(245,158,11,0.28)]';
+        roundModalNextEn.textContent = 'See Final Score 🏆';
+        roundModalNextZh.textContent = '(查看總分)';
+      }
+
+      roundModal.classList.remove('hidden');
+      roundModal.classList.add('flex');
+    }
+
+    function openSummaryModal() {
+      summaryScoreText.textContent = `${score} / ${MAX_ROUNDS}`;
+
+      if (score >= 8) {
+        summaryStars.textContent = '⭐⭐⭐';
+        summaryRankEn.textContent = 'Master Spy';
+        summaryRankZh.textContent = '超級特務';
+      } else if (score >= 5) {
+        summaryStars.textContent = '⭐⭐';
+        summaryRankEn.textContent = 'Secret Agent';
+        summaryRankZh.textContent = '秘密特務';
+      } else {
+        summaryStars.textContent = '⭐';
+        summaryRankEn.textContent = 'Junior Agent';
+        summaryRankZh.textContent = '見習特務';
+      }
+
+      // Render 10-round visual pass/fail badge strip
+      summaryRoundStrip.innerHTML = '';
+      for (let i = 0; i < MAX_ROUNDS; i++) {
+        const passed = Boolean(roundResults[i]);
+        const badge = document.createElement('div');
+        badge.className = passed
+          ? 'font-spy py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-xs font-bold flex items-center justify-center gap-1'
+          : 'font-spy py-1.5 rounded-xl bg-red-500/15 border border-red-400/40 text-red-300 text-xs font-bold flex items-center justify-center gap-1';
+        badge.textContent = `${i + 1}${passed ? '✓' : '✕'}`;
+        summaryRoundStrip.appendChild(badge);
+      }
+
+      summaryModal.classList.remove('hidden');
+      summaryModal.classList.add('flex');
+      launchConfetti();
+    }
+
+    // ---------------------------------------------------------
+    // TEACHER SETTINGS MODAL & STUDENT LINK GENERATION
+    // ---------------------------------------------------------
+    function openSettingsModal() {
+      if (isStudentMode || !settingsModal) return;
+      editorWords = [...wordBank];
+      studentLinkBox.classList.add('hidden');
+      renderSettingsInputs();
+      settingsModal.classList.remove('hidden');
+      settingsModal.classList.add('flex');
+    }
+
+    function renderSettingsInputs() {
+      settingsWordCount.textContent = `${editorWords.length} / ${MAX_WORDS}`;
+      addWordBtn.disabled = editorWords.length >= MAX_WORDS;
+      addWordBtn.classList.toggle('opacity-50', editorWords.length >= MAX_WORDS);
+
+      settingsWordInputs.innerHTML = '';
+      editorWords.forEach((word, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-1.5';
+
+        const num = document.createElement('span');
+        num.className = 'font-spy w-6 text-xs font-bold text-slate-400 text-right shrink-0';
+        num.textContent = `${idx + 1}.`;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = word;
+        input.maxLength = 20;
+        input.placeholder = `Word ${idx + 1}`;
+        input.className =
+          'w-full px-3 py-2 rounded-xl bg-slate-900 border-2 border-slate-700 focus:border-sky-400 focus:outline-none text-sm font-bold text-white placeholder-slate-500';
+        input.addEventListener('input', (e) => {
+          editorWords[idx] = e.target.value;
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.title = 'Delete word';
+        delBtn.textContent = '×';
+        const canDelete = editorWords.length > MIN_WORDS;
+        delBtn.disabled = !canDelete;
+        delBtn.className = `w-8 h-9 rounded-xl font-bold text-lg flex items-center justify-center shrink-0 transition-colors ${
+          canDelete
+            ? 'bg-red-500/15 hover:bg-red-500/30 text-red-300 border border-red-400/40'
+            : 'bg-slate-800 text-slate-600 border border-slate-700 cursor-not-allowed'
+        }`;
+        delBtn.addEventListener('click', () => {
+          if (editorWords.length <= MIN_WORDS) return;
+          editorWords.splice(idx, 1);
+          renderSettingsInputs();
+        });
+
+        row.appendChild(num);
+        row.appendChild(input);
+        row.appendChild(delBtn);
+        settingsWordInputs.appendChild(row);
+      });
+    }
+
+    function getCleanedEditorWords() {
+      const seen = new Set();
+      const cleaned = [];
+      for (const raw of editorWords) {
+        const w = raw.trim();
+        if (!w) continue;
+        const lower = w.toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          cleaned.push(w);
+        }
+      }
+      return cleaned;
+    }
+
+    async function handleSaveSettings() {
+      const cleaned = getCleanedEditorWords();
+      if (cleaned.length < MIN_WORDS) {
+        showToast(`Please enter at least ${MIN_WORDS} unique words!`, `請至少輸入 ${MIN_WORDS} 個不重複的單字！`, 'error');
+        return;
+      }
+
+      wordBank = cleaned.slice(0, MAX_WORDS);
+      const savedCloud = await saveWordBankToCloud(wordBank);
+
+      closeAllModals();
+      startNewSession();
+
+      if (savedCloud) {
+        showToast('Saved to cloud & restarted game!', '已儲存單字庫並重新開始！', 'success');
+      } else {
+        showToast('Word bank updated & restarted!', '單字庫已更新並重新開始！', 'success');
+      }
+    }
+
+    function handleGenerateStudentLink() {
+      const cleaned = getCleanedEditorWords();
+      if (cleaned.length < MIN_WORDS) {
+        showToast(`Enter at least ${MIN_WORDS} unique words first!`, `請先輸入至少 ${MIN_WORDS} 個不重複的單字！`, 'error');
+        return;
+      }
+
+      const baseUrl = window.location.href.split('?')[0];
+      const encodedWords = cleaned.map(w => encodeURIComponent(w)).join(',');
+      const studentUrl = `${baseUrl}?words=${encodedWords}`;
+
+      studentLinkInput.value = studentUrl;
+      studentLinkBox.classList.remove('hidden');
+
+      const copied = copyTextToClipboard(studentUrl);
+      if (copied) {
+        showToast('Student link copied to clipboard!', '已複製學生專屬連結！', 'success');
+      } else {
+        showToast('Student link ready! Copy from the box below.', '連結已產生！請從下方欄位複製', 'info');
+      }
+    }
+
+    // ---------------------------------------------------------
+    // LIGHTWEIGHT CANVAS CONFETTI
+    // ---------------------------------------------------------
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const confettiCtx = confettiCanvas.getContext('2d');
+    let confettiParticles = [];
+    let confettiAnimId = null;
+
+    function launchConfetti() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+      confettiCanvas.classList.remove('hidden');
+
+      const colors = ['#38BDF8', '#10B981', '#F59E0B', '#EF4444', '#A78BFA', '#F8FAFC'];
+      confettiParticles = [];
+
+      for (let i = 0; i < 85; i++) {
+        confettiParticles.push({
+          x: window.innerWidth * (0.15 + Math.random() * 0.7),
+          y: -15 - Math.random() * 80,
+          w: 7 + Math.random() * 6,
+          h: 5 + Math.random() * 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 6,
+          vy: 3 + Math.random() * 5,
+          rot: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 12
+        });
+      }
+
+      if (confettiAnimId) cancelAnimationFrame(confettiAnimId);
+      animateConfetti();
+    }
+
+    function animateConfetti() {
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      let active = 0;
+
+      for (const p of confettiParticles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.12;
+        p.rot += p.vRot;
+
+        if (p.y < confettiCanvas.height + 20) {
+          active++;
+          confettiCtx.save();
+          confettiCtx.translate(p.x, p.y);
+          confettiCtx.rotate((p.rot * Math.PI) / 180);
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          confettiCtx.restore();
+        }
+      }
+
+      if (active > 0) {
+        confettiAnimId = requestAnimationFrame(animateConfetti);
+      } else {
+        confettiCanvas.classList.add('hidden');
+        confettiAnimId = null;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (!confettiCanvas.classList.contains('hidden')) {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+      }
+    });
+
+    // ---------------------------------------------------------
+    // EVENT LISTENERS
+    // ---------------------------------------------------------
+    checkBtn.addEventListener('click', handleCheckAnswer);
+    clearBtn.addEventListener('click', handleClearGuess);
+
+    roundModalNextBtn.addEventListener('click', handleRoundModalContinue);
+    playAgainBtn.addEventListener('click', startNewSession);
+
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', openSettingsModal);
+    }
+    if (closeSettingsBtn) {
+      closeSettingsBtn.addEventListener('click', closeAllModals);
+    }
+    if (addWordBtn) {
+      addWordBtn.addEventListener('click', () => {
+        if (editorWords.length < MAX_WORDS) {
+          editorWords.push('');
+          renderSettingsInputs();
+          const inputs = settingsWordInputs.querySelectorAll('input');
+          if (inputs.length > 0) inputs[inputs.length - 1].focus();
+        }
+      });
+    }
+    if (resetDefaultsBtn) {
+      resetDefaultsBtn.addEventListener('click', () => {
+        editorWords = [...DEFAULT_WORDS];
+        renderSettingsInputs();
+        showToast('Restored default 6 words. Click Save to apply.', '已恢復預設 6 個單字，請按儲存套用', 'info');
+      });
+    }
+    if (saveSettingsBtn) {
+      saveSettingsBtn.addEventListener('click', handleSaveSettings);
+    }
+    if (generateLinkBtn) {
+      generateLinkBtn.addEventListener('click', handleGenerateStudentLink);
+    }
+    if (copyLinkFallbackBtn) {
+      copyLinkFallbackBtn.addEventListener('click', () => {
+        const ok = copyTextToClipboard(studentLinkInput.value);
+        showToast(ok ? 'Link copied!' : 'Select and copy the link.', ok ? '已複製連結！' : '請選取並複製連結', ok ? 'success' : 'info');
+      });
+    }
+    if (settingsModal) {
+      settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) closeAllModals();
+      });
+    }
+
+    // ---------------------------------------------------------
+    // INITIALIZE ON WINDOW LOAD
+    // ---------------------------------------------------------
+    window.addEventListener('load', () => {
+      const params = new URLSearchParams(window.location.search);
+      const customWordsParam = params.get('words');
+
+      if (customWordsParam) {
+        const parsed = customWordsParam
+          .split(',')
+          .map(w => w.trim())
+          .filter(Boolean);
+
+        const uniqueUrlWords = [];
+        const seen = new Set();
+        for (const w of parsed) {
+          if (!seen.has(w.toLowerCase())) {
+            seen.add(w.toLowerCase());
+            uniqueUrlWords.push(w);
+          }
+        }
+
+        if (uniqueUrlWords.length >= MIN_WORDS) {
+          wordBank = uniqueUrlWords.slice(0, MAX_WORDS);
+          isStudentMode = true;
+          // Completely remove Teacher Settings gear button and modal in Student Mode
+          if (settingsBtn) settingsBtn.remove();
+          if (settingsModal) settingsModal.remove();
+        }
+      }
+
+      startNewSession();
+      initFirebaseAndLoadWords();
+    });
+  </script>
+</body>
+</html>
