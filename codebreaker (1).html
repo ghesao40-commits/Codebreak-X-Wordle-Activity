@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codebreaker • 特務破譯</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Quicksand (primary ESL font), Noto Sans TC (Traditional Chinese), JetBrains Mono (spy badges/counters), Patrick Hand (pencil handwriting) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&family=Patrick+Hand&family=Quicksand:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --font-main: 'Quicksand', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      --font-pencil: 'Patrick Hand', 'Noto Sans TC', cursive, sans-serif;
+    }
+
+    /* Midnight navy tactical console background (#0b1120) with subtle blueprint grid overlay */
+    body {
+      font-family: var(--font-main);
+      background-color: #0b1120;
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.14) 0%, transparent 42%),
+        radial-gradient(circle at 85% 85%, rgba(251, 191, 36, 0.09) 0%, transparent 45%),
+        linear-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 34px 34px, 34px 34px;
+      min-height: 100vh;
+      color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+
+    .font-spy {
+      font-family: var(--font-mono);
+    }
+
+    /* Dark slate mission panels (#1e293b) with crisp tactical borders */
+    .spy-panel {
+      background-color: rgba(30, 41, 59, 0.96);
+      border: 2px solid #334155;
+      box-shadow: 0 10px 28px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(148, 163, 184, 0.1);
+    }
+
+    /* Tactile flat Duolingo-style pressable buttons */
+    .btn-tactile {
+      transition: transform 0.1s ease, filter 0.15s ease, background-color 0.15s ease;
+      user-select: none;
+    }
+    .btn-tactile:active:not(:disabled) {
+      transform: translateY(3px);
+    }
+
+    /* Recessed Security Keypad Chassis */
+    .keypad-chassis {
+      background: linear-gradient(180deg, #050912 0%, #0a101f 100%);
+      border: 4px solid #0f172a;
+      box-shadow:
+        0 0 0 2px #020617,
+        inset 0 8px 18px rgba(2, 6, 23, 0.92),
+        inset 0 0 0 1px rgba(56, 189, 248, 0.14),
+        0 8px 20px rgba(2, 6, 23, 0.55);
+    }
+
+    /* Chunky, High-Contrast Mechanical Keypad Keycap */
+    .keypad-key {
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+      border: 2px solid #cbd5e1;
+      border-bottom: 6px solid #0284c7;
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.95),
+        0 5px 10px rgba(2, 6, 23, 0.55);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, border-bottom-width 0.08s ease, opacity 0.15s ease;
+      user-select: none;
+    }
+    .keypad-key:hover:not(.keypad-key-pressed) {
+      background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%);
+      border-color: #7dd3fc;
+    }
+    .keypad-key:active:not(.keypad-key-pressed) {
+      transform: translateY(4px);
+      border-bottom-width: 2px;
+      margin-bottom: 4px;
+      box-shadow:
+        inset 0 2px 4px rgba(15, 23, 42, 0.18),
+        0 1px 2px rgba(2, 6, 23, 0.5);
+    }
+
+    /* Physically Depressed / Locked-In State when Word is Selected */
+    .keypad-key-pressed {
+      background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%) !important;
+      border-color: #38bdf8 !important;
+      border-bottom: 2px solid #0369a1 !important;
+      transform: translateY(4px);
+      opacity: 0.55;
+      box-shadow:
+        inset 0 3px 6px rgba(15, 23, 42, 0.35),
+        0 0 12px rgba(56, 189, 248, 0.25) !important;
+      cursor: not-allowed !important;
+    }
+
+    /* Tiny decorative metallic screw/rivet */
+    .keypad-rivet {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 35%, #94a3b8, #334155 70%, #0f172a 100%);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Recessed Electronic LCD/OLED Display Screen (Spy Phosphor-Green) */
+    .electronic-screen {
+      position: relative;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(52, 211, 153, 0.28) 0%, transparent 68%),
+        linear-gradient(180deg, #03150d 0%, #07291b 100%);
+      border: 3px solid #22543d;
+      box-shadow:
+        inset 0 8px 20px rgba(0, 0, 0, 0.88),
+        inset 0 0 0 1px rgba(52, 211, 153, 0.38),
+        0 0 18px rgba(52, 211, 153, 0.16);
+      overflow: hidden;
+    }
+
+    /* Subtle LCD horizontal scanline overlay */
+    .electronic-screen::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: repeating-linear-gradient(
+        0deg,
+        rgba(52, 211, 153, 0.055) 0px,
+        rgba(52, 211, 153, 0.055) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      z-index: 1;
+    }
+
+    /* Faint glass reflection sheen along the top edge */
+    .electronic-screen::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 42%;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(167, 243, 208, 0.07) 0%, transparent 100%);
+      z-index: 1;
+    }
+
+    /* Digital Readout Glow for Filled Words */
+    .lcd-word-glow {
+      color: #ecfdf5;
+      text-shadow: 0 0 12px rgba(52, 211, 153, 0.9), 0 0 3px rgba(236, 253, 245, 0.95);
+    }
+
+    @keyframes cursorBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.15; }
+    }
+    .animate-cursor {
+      animation: cursorBlink 1s steps(1, end) infinite;
+    }
+
+    /* UI Animations */
+    @keyframes popIn {
+      0% { transform: scale(0.92); opacity: 0; }
+      70% { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: popIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .animate-shake {
+      animation: shake 0.34s ease-in-out;
+    }
+
+    @keyframes speakerPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .speaking-pulse {
+      animation: speakerPulse 0.36s ease-in-out;
+    }
+
+    @keyframes floatTrophy {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-trophy {
+      animation: floatTrophy 1.8s ease-in-out infinite;
+    }
+
+    /* Bomb Countdown Animations */
+    @keyframes fuseSpark {
+      0%, 100% { transform: scale(0.85) rotate(0deg); opacity: 0.85; }
+      50% { transform: scale(1.3) rotate(18deg); opacity: 1; }
+    }
+    .animate-spark {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: fuseSpark 0.45s ease-in-out infinite;
+    }
+
+    @keyframes bombWiggle {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      20% { transform: rotate(-10deg) scale(1.06); }
+      40% { transform: rotate(10deg) scale(1.06); }
+      60% { transform: rotate(-8deg) scale(1.04); }
+      80% { transform: rotate(8deg) scale(1.04); }
+    }
+    .animate-bomb-wiggle {
+      animation: bombWiggle 0.55s ease-in-out infinite;
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.45), 0 8px 22px rgba(2, 6, 23, 0.5); }
+      50% { box-shadow: 0 0 0 7px rgba(248, 113, 113, 0), 0 8px 24px rgba(248, 113, 113, 0.35); }
+    }
+    .animate-alert-pulse {
+      animation: alertPulse 1.1s ease-in-out infinite;
+    }
+
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0); }
+      15% { transform: translate(-8px, 4px); }
+      30% { transform: translate(8px, -4px); }
+      45% { transform: translate(-6px, -3px); }
+      60% { transform: translate(6px, 3px); }
+      75% { transform: translate(-3px, 2px); }
+    }
+    .animate-screen-shake {
+      animation: screenShake 0.48s ease-in-out;
+    }
+
+    /* Spy Field Notepad (Lined Paper) for Mission Log */
+    .font-pencil {
+      font-family: var(--font-pencil);
+    }
+
+    .spy-notepad {
+      position: relative;
+      background-color: #fbf6e8;
+      background-image:
+        linear-gradient(90deg, transparent 44px, rgba(244, 63, 94, 0.32) 44px, rgba(244, 63, 94, 0.32) 46px, transparent 46px),
+        repeating-linear-gradient(
+          180deg,
+          transparent 0px,
+          transparent 31px,
+          rgba(56, 189, 248, 0.22) 31px,
+          rgba(56, 189, 248, 0.22) 32px
+        );
+      background-position: 0 0, 0 58px;
+      border: 2px solid #d6ccb4;
+      border-bottom: 6px solid #bfb397;
+      box-shadow:
+        0 14px 30px rgba(2, 6, 23, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      color: #334155;
+    }
+
+    /* Penciled text look (graphite texture & softness) */
+    .pencil-text {
+      font-family: var(--font-pencil);
+      color: #2c3540;
+      letter-spacing: 0.03em;
+      text-shadow: 0.4px 0.4px 0 rgba(44, 53, 64, 0.22);
+    }
+
+    /* Highlighter-style Wordle feedback over pencil handwriting */
+    .pencil-mark-green {
+      background: linear-gradient(104deg, rgba(134, 239, 172, 0.65) 0%, rgba(52, 211, 153, 0.58) 100%);
+      border: 2px solid rgba(16, 185, 129, 0.65);
+      box-shadow: 0 2px 0 rgba(16, 185, 129, 0.25);
+    }
+    .pencil-mark-yellow {
+      background: linear-gradient(104deg, rgba(254, 240, 138, 0.82) 0%, rgba(251, 191, 36, 0.62) 100%);
+      border: 2px solid rgba(217, 119, 6, 0.55);
+      box-shadow: 0 2px 0 rgba(217, 119, 6, 0.22);
+    }
+    .pencil-mark-red {
+      background: linear-gradient(104deg, rgba(254, 202, 202, 0.78) 0%, rgba(248, 113, 113, 0.52) 100%);
+      border: 2px solid rgba(220, 38, 38, 0.48);
+      box-shadow: 0 2px 0 rgba(220, 38, 38, 0.2);
+    }
+
+    /* Custom dark scrollbar for settings modal */
+    .custom-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-sky-400/30 selection:text-sky-100">
+
+  <!-- Confetti Canvas Overlay -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 hidden"></canvas>
+
+  <!-- Floating Toast Notification Container -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none w-[92vw] max-w-md"></div>
+
+  <!-- Main Responsive Container -->
+  <div id="app-wrapper" class="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6 space-y-4">
+
+    <!-- =========================================================
+         COMPACT SINGLE HEADER ROW (SPY HQ + BOMB COUNTDOWN)
+         ========================================================= -->
+    <header class="flex flex-wrap items-center justify-between gap-3">
+      <!-- Spy HQ Branding -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-11 h-11 rounded-2xl bg-[#1e293b] border-2 border-[#38bdf8]/60 border-b-4 border-b-sky-600 flex items-center justify-center text-2xl shadow-[0_0_16px_rgba(56,189,248,0.2)]">
+          🕵️
+        </div>
+        <div>
+          <span class="font-spy inline-block text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-md bg-[#fbbf24]/15 text-[#fbbf24] border border-[#fbbf24]/35 mb-0.5">
+            TOP SECRET • 特務任務
+          </span>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white leading-none">
+            Codebreaker
+          </h1>
+        </div>
+      </div>
+
+      <!-- Right Controls: Bomb Countdown Widget + New Code + Settings -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <!-- Spy HQ Bomb Countdown Widget -->
+        <div
+          id="bomb-widget"
+          class="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-[#1e293b] border-2 border-[#38bdf8]/65 border-b-4 border-b-[#38bdf8] transition-all duration-300"
+          aria-live="polite"
+        >
+          <!-- Animated Bomb SVG Container -->
+          <div id="bomb-icon-wrap" class="w-8 h-8 flex items-center justify-center shrink-0"></div>
+
+          <!-- LED Readout & Segmented Fuse Bars -->
+          <div class="flex flex-col gap-1 min-w-[132px] sm:min-w-[152px]">
+            <div class="flex items-center justify-between gap-2 leading-none">
+              <div class="flex items-baseline gap-1.5">
+                <span id="bomb-timer-led" class="font-spy text-lg sm:text-xl font-bold tracking-wider text-[#38bdf8]">06</span>
+                <span class="text-[10px] font-bold uppercase tracking-wide text-slate-300">TRIES LEFT / 剩餘次數</span>
+              </div>
+            </div>
+            <!-- 5 or 6 Segmented LED Bars -->
+            <div id="bomb-segments" class="grid grid-cols-6 gap-1"></div>
+            <div class="flex justify-end">
+              <span id="bomb-status-badge" class="font-spy text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border bg-[#34d399]/15 text-[#34d399] border-[#34d399]/40 whitespace-nowrap">
+                SAFE / 安全
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick New Code Restart Button -->
+        <button
+          id="header-restart-btn"
+          type="button"
+          title="Start a new secret code with your saved words"
+          class="btn-tactile px-3 py-2.5 rounded-2xl bg-[#1e293b] hover:bg-slate-700 text-sky-200 border-2 border-slate-600 border-b-4 border-b-slate-900 font-bold text-xs sm:text-sm flex items-center gap-1.5"
+        >
+          <span>🔄</span>
+          <span class="hidden sm:inline">New Code / 重來</span>
+          <span class="sm:hidden">重來</span>
+        </button>
+
+        <!-- Discrete Teacher Settings Gear Icon (Removed in Student Mode) -->
+        <button
+          id="settings-btn"
+          type="button"
+          aria-label="Teacher Settings"
+          title="Teacher Settings (教師設定)"
+          class="btn-tactile w-11 h-11 rounded-2xl bg-[#1e293b] hover:bg-slate-700 text-slate-200 border-2 border-slate-600 border-b-4 border-b-slate-900 flex items-center justify-center text-xl"
+        >
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- =========================================================
+         COMPACT HORIZONTAL BILINGUAL COLOR LEGEND
+         ========================================================= -->
+    <div class="spy-panel rounded-2xl px-3.5 py-2.5 flex flex-wrap items-center justify-center sm:justify-between gap-2.5 text-xs sm:text-sm font-bold">
+      <div class="flex items-center gap-2">
+        <span class="w-4 h-4 rounded-md bg-[#34d399] border border-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.45)] shrink-0"></span>
+        <span class="text-emerald-200">Right Spot <span class="text-slate-400 font-medium">(位置對)</span></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-4 h-4 rounded-md bg-[#fbbf24] border border-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.45)] shrink-0"></span>
+        <span class="text-amber-200">Wrong Spot <span class="text-slate-400 font-medium">(位置錯)</span></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-4 h-4 rounded-md bg-[#f87171] border border-red-300 shadow-[0_0_8px_rgba(248,113,113,0.45)] shrink-0"></span>
+        <span class="text-red-200">Not in Code <span class="text-slate-400 font-medium">(不在密碼中)</span></span>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TWO-COLUMN MAIN GAMEPLAY GRID
+         ========================================================= -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+      <!-- LEFT COLUMN: Unified Spy Keypad Terminal (Electronic Display + Code Keypad + Action Buttons) -->
+      <div class="lg:col-span-7">
+        <section class="spy-panel rounded-3xl p-4 sm:p-5 space-y-4">
+          <!-- Combined Header -->
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <span>🔐 Current Guess</span>
+                <span class="text-xs sm:text-sm font-medium text-slate-400">/ 目前密碼</span>
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">
+                Tap a key to enter • Tap <span class="text-sky-300 font-bold">🔊</span> to listen (點按鍵輸入 • 點喇叭聽發音)
+              </p>
+            </div>
+            <span
+              id="try-badge"
+              class="font-spy text-[11px] sm:text-xs font-bold px-2.5 py-1 rounded-xl bg-[#0b1120] border border-[#38bdf8]/40 text-[#38bdf8]"
+            >
+              TRY 1 / 6 • 第 1 / 6 次
+            </span>
+          </div>
+
+          <!-- Unified Darker-Bordered Terminal Housing (Electronic Display + Code Keypad) -->
+          <div class="keypad-chassis rounded-2xl p-3 sm:p-4 space-y-3.5">
+            <!-- Top Terminal Status Strip with Corner Rivets -->
+            <div class="flex items-center justify-between px-1">
+              <div class="flex items-center gap-2">
+                <span class="keypad-rivet" aria-hidden="true"></span>
+                <span class="font-spy text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  SEC-PAD // VOICE LOCK
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="font-spy text-[10px] font-bold text-[#34d399] flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#34d399] shadow-[0_0_6px_#34d399]"></span>
+                  ONLINE
+                </span>
+                <span class="keypad-rivet" aria-hidden="true"></span>
+              </div>
+            </div>
+
+            <!-- Phosphor-Green Electronic LCD Display -->
+            <div class="electronic-screen rounded-2xl p-3.5 sm:p-4 space-y-3">
+              <!-- Digital Screen Status Bar -->
+              <div class="relative z-10 flex items-center justify-between gap-2 pb-2 border-b border-emerald-500/25">
+                <span class="font-spy text-[10px] sm:text-xs font-bold uppercase tracking-widest text-emerald-300/85">
+                  CODE DISPLAY // LCD-03
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <span id="display-status-dot" class="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399]"></span>
+                  <span id="display-status-text" class="font-spy text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-200">
+                    0 / 3 ENTERED
+                  </span>
+                </div>
+              </div>
+
+              <!-- 3 High-Visibility Digital Guess Slots -->
+              <div id="guess-slots" class="relative z-10 grid grid-cols-3 gap-2.5 sm:gap-3">
+                <!-- Dynamically rendered -->
+              </div>
+            </div>
+
+            <!-- Code Keypad Word Choices (Directly Beneath Electronic Display) -->
+            <div id="word-bank-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-0.5">
+              <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Bottom Decorative Rivets -->
+            <div class="flex items-center justify-between px-1 pt-0.5" aria-hidden="true">
+              <span class="keypad-rivet"></span>
+              <span class="font-spy text-[9px] uppercase tracking-widest text-slate-600">AGENT INPUT MODULE</span>
+              <span class="keypad-rivet"></span>
+            </div>
+          </div>
+
+          <!-- Action Buttons: Check Code & Clear (Right Below Keypad) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-0.5">
+            <button
+              id="check-btn"
+              type="button"
+              class="btn-tactile sm:col-span-2 py-3 px-4 rounded-2xl bg-[#34d399] hover:bg-emerald-300 text-slate-950 border-2 border-emerald-300 border-b-4 border-b-emerald-700 font-bold flex flex-col items-center justify-center leading-tight shadow-[0_0_18px_rgba(52,211,153,0.22)]"
+            >
+              <span class="text-base sm:text-lg">✅ Check Code</span>
+              <span class="text-xs font-semibold text-emerald-950/80">(檢查密碼)</span>
+            </button>
+            <button
+              id="clear-btn"
+              type="button"
+              class="btn-tactile py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border-2 border-slate-600 border-b-4 border-b-slate-950 font-bold flex flex-col items-center justify-center leading-tight"
+            >
+              <span class="text-base sm:text-lg">🧹 Clear</span>
+              <span class="text-xs font-medium text-slate-400">(清除)</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT COLUMN: Mission Log (Spy Field Notepad) -->
+      <div class="lg:col-span-5">
+        <section class="spy-notepad rounded-3xl p-4 sm:p-5 min-h-[280px]">
+          <!-- Decorative Notebook Binding Holes along Top -->
+          <div class="flex items-center justify-around px-6 mb-2.5" aria-hidden="true">
+            <span class="w-3 h-3 rounded-full bg-[#0b1120] border border-[#c7bca1] shadow-inner"></span>
+            <span class="w-3 h-3 rounded-full bg-[#0b1120] border border-[#c7bca1] shadow-inner"></span>
+            <span class="w-3 h-3 rounded-full bg-[#0b1120] border border-[#c7bca1] shadow-inner"></span>
+            <span class="w-3 h-3 rounded-full bg-[#0b1120] border border-[#c7bca1] shadow-inner"></span>
+            <span class="w-3 h-3 rounded-full bg-[#0b1120] border border-[#c7bca1] shadow-inner"></span>
+          </div>
+
+          <!-- Notepad Header -->
+          <div class="flex items-center justify-between gap-2 pb-2.5 mb-3.5 border-b-2 border-dashed border-slate-400/50 pl-8">
+            <div class="flex items-center gap-1.5">
+              <span class="text-lg leading-none" aria-hidden="true">✏️</span>
+              <h2 class="pencil-text text-xl sm:text-2xl font-bold leading-tight">
+                Mission Log <span class="text-sm sm:text-base font-normal text-slate-500">/ 猜測紀錄</span>
+              </h2>
+            </div>
+            <span id="history-count-pill" class="font-pencil text-base font-bold px-2.5 py-0.5 rounded-lg bg-slate-800/10 border border-slate-400/50 text-slate-700">
+              0 / 6
+            </span>
+          </div>
+
+          <!-- Submitted Tries List (Dynamically matches 5 or 6 tries) -->
+          <div id="guess-history-list" class="space-y-3">
+            <!-- Dynamically rendered -->
+          </div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- =========================================================
+       MODAL 1: END-OF-ROUND MODAL (WIN OR LOSE + PLAY AGAIN)
+       ========================================================= -->
+  <div id="round-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/85 backdrop-blur-xs p-4">
+    <div class="spy-panel w-full max-w-md rounded-3xl border-[#38bdf8]/50 p-6 text-center animate-pop">
+      <div id="round-modal-badge" class="font-spy inline-block text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-[#38bdf8]/15 text-[#38bdf8] border border-[#38bdf8]/40 mb-3">
+        DEFUSED • 已拆彈
+      </div>
+      <div id="round-modal-emoji" class="text-5xl mb-2 animate-trophy">💣</div>
+
+      <h3 id="round-modal-title-en" class="text-2xl font-bold text-white leading-tight">
+        💣 BOMB DEFUSED!
+      </h3>
+      <p id="round-modal-title-zh" class="text-sm font-semibold text-[#34d399] mt-1">
+        成功拆彈！
+      </p>
+      <p id="round-modal-subtext" class="font-spy text-xs text-slate-300 mt-1.5 mb-4">
+        Cracked in 1 / 6 tries • 第 1 次成功破解
+      </p>
+
+      <!-- Secret Code Reveal with Clickable Audio Buttons -->
+      <div class="bg-[#0b1120] rounded-2xl border border-slate-700 p-3.5 mb-5">
+        <p class="text-xs font-bold text-slate-300 mb-2.5">
+          Secret Code <span class="text-slate-400">(正確密碼)</span> • Tap 🔊 to listen
+        </p>
+        <div id="round-modal-code" class="grid grid-cols-3 gap-2">
+          <!-- Dynamically rendered 3 keycards -->
+        </div>
+      </div>
+
+      <!-- Play Again Button (Reuses last-saved words or URL student words) -->
+      <button
+        id="play-again-btn"
+        type="button"
+        class="btn-tactile w-full py-3.5 px-5 rounded-2xl bg-[#38bdf8] hover:bg-sky-300 text-slate-950 border-2 border-sky-300 border-b-4 border-b-sky-700 font-bold flex flex-col items-center justify-center leading-tight shadow-[0_0_18px_rgba(56,189,248,0.28)]"
+      >
+        <span class="text-lg">🔄 Play Again / 再玩一次</span>
+        <span class="text-[11px] font-semibold text-slate-900/80 mt-0.5">Uses your saved words / 使用已儲存的單字</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 2: TEACHER SETTINGS MODAL (REMOVED IN STUDENT MODE)
+       ========================================================= -->
+  <div id="settings-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/85 backdrop-blur-xs p-3 sm:p-4">
+    <div class="spy-panel w-full max-w-lg max-h-[92vh] rounded-3xl border-[#38bdf8]/45 flex flex-col overflow-hidden animate-pop">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700 bg-[#0b1120]/80">
+        <div>
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span>⚙️ Teacher Settings</span>
+            <span id="settings-word-count" class="font-spy text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#38bdf8]/20 text-[#38bdf8] border border-[#38bdf8]/40">
+              8 / 20 words
+            </span>
+          </h3>
+          <p class="text-xs text-slate-400">
+            教師設定 • 自訂單字池 (6–20 words • 每回合隨機出 6 鍵)
+          </p>
+        </div>
+        <button
+          id="close-settings-btn"
+          type="button"
+          aria-label="Close Settings"
+          class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold flex items-center justify-center text-lg"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="p-5 overflow-y-auto custom-scroll space-y-4">
+        <!-- Tries Per Round Toggle (5 vs 6 Tries) -->
+        <div class="bg-[#0b1120] rounded-2xl border border-slate-700 p-3.5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+            <div>
+              <div class="text-sm font-bold text-slate-200">
+                Bomb Countdown Tries <span class="text-xs font-normal text-slate-400">(每回合猜測次數)</span>
+              </div>
+              <div class="text-[11px] text-slate-400">
+                6 tries is recommended for 8–9+ words • 建議 8–9 個單字使用 6 次
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button
+              id="tries-5-btn"
+              type="button"
+              class="btn-tactile py-2 px-3 rounded-xl border-2 font-bold text-xs sm:text-sm flex flex-col items-center justify-center leading-tight transition-colors"
+            >
+              <span>💣 5 Tries</span>
+              <span class="text-[11px] font-medium opacity-80">5 次 • 挑戰模式</span>
+            </button>
+            <button
+              id="tries-6-btn"
+              type="button"
+              class="btn-tactile py-2 px-3 rounded-xl border-2 font-bold text-xs sm:text-sm flex flex-col items-center justify-center leading-tight transition-colors"
+            >
+              <span>🛡️ 6 Tries</span>
+              <span class="text-[11px] font-medium opacity-80">6 次 • 推薦模式</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Word Inputs -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-2.5">
+            <label class="text-sm font-bold text-slate-200">
+              Custom Word Pool <span class="text-xs font-normal text-slate-400">(自訂單字池 • 抽 3 密碼 + 3 干擾字)</span>
+            </label>
+            <button
+              id="add-word-btn"
+              type="button"
+              class="btn-tactile text-xs font-bold px-3 py-1.5 rounded-xl bg-[#38bdf8]/20 hover:bg-[#38bdf8]/30 text-[#38bdf8] border border-[#38bdf8]/50 border-b-2 border-b-sky-600"
+            >
+              + Add Word (新增單字)
+            </button>
+          </div>
+
+          <div id="settings-word-inputs" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Dynamically rendered inputs -->
+          </div>
+        </div>
+
+        <!-- Generate Student Link Section -->
+        <div class="bg-[#0b1120] rounded-2xl border border-[#fbbf24]/40 p-3.5 space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="text-sm font-bold text-[#fbbf24]">Student Mode Share Link</div>
+              <div class="text-xs text-slate-400">自動載入自訂單字並隱藏教師設定</div>
+            </div>
+            <button
+              id="generate-link-btn"
+              type="button"
+              class="btn-tactile px-3.5 py-2 rounded-xl bg-[#fbbf24] hover:bg-amber-300 text-slate-950 border-2 border-amber-300 border-b-4 border-b-amber-600 font-bold text-xs sm:text-sm"
+            >
+              🔗 Generate Student Link (產生學生連結)
+            </button>
+          </div>
+
+          <!-- Sleek In-Modal Confirmation Banner -->
+          <div id="student-link-toast" class="hidden px-3 py-1.5 rounded-xl bg-[#34d399]/15 border border-[#34d399]/40 text-[#34d399] text-xs font-bold">
+            ✓ Link copied to clipboard! (已複製學生專屬連結！)
+          </div>
+
+          <!-- Fallback Copyable URL Input Box -->
+          <div id="student-link-box" class="hidden space-y-1.5">
+            <div class="flex gap-1.5">
+              <input
+                id="student-link-input"
+                type="text"
+                readonly
+                class="w-full text-xs bg-slate-900 border border-[#fbbf24]/40 rounded-xl px-3 py-2 text-sky-200 font-spy focus:outline-none"
+              />
+              <button
+                id="copy-link-fallback-btn"
+                type="button"
+                class="btn-tactile shrink-0 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-[#fbbf24]/50 text-[#fbbf24] font-bold text-xs"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-5 py-4 border-t border-slate-700 bg-[#0b1120]/80 flex flex-col sm:flex-row gap-2.5">
+        <button
+          id="reset-defaults-btn"
+          type="button"
+          class="btn-tactile sm:w-auto px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border-2 border-slate-600 border-b-4 border-b-slate-950 font-bold text-xs sm:text-sm"
+        >
+          Default 8 Words (預設)
+        </button>
+        <button
+          id="save-settings-btn"
+          type="button"
+          class="btn-tactile flex-1 py-2.5 px-4 rounded-2xl bg-[#34d399] hover:bg-emerald-300 text-slate-950 border-2 border-emerald-300 border-b-4 border-b-emerald-700 font-bold text-sm flex flex-col items-center justify-center leading-tight"
+        >
+          <span>Save Words</span>
+          <span class="text-[11px] font-semibold text-emerald-950/80">(儲存單字)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       STANDALONE GAME ENGINE (LOCALSTORAGE + WEB SPEECH API)
+       ========================================================= -->
+  <script>
+    (function () {
+      'use strict';
+
+      // ---------------------------------------------------------
+      // CONSTANTS & STATE
+      // ---------------------------------------------------------
+      const STORAGE_KEY = 'phonics_codebreaker_custom_words_v1';
+      const TRIES_STORAGE_KEY = 'phonics_codebreaker_max_tries_v1';
+      const DEFAULT_WORDS = ['cat', 'hat', 'bat', 'mat', 'sat', 'rat', 'pat', 'fat'];
+      const MIN_WORDS = 6;
+      const MAX_WORDS = 20;
+      const CODE_LENGTH = 3;
+      const KEYPAD_CHOICES_COUNT = 6;
+      const DEFAULT_TRIES = 6;
+
+      let wordBank = [...DEFAULT_WORDS];
+      let roundChoices = []; // 6 shuffled words shown on the keypad (3 secret + 3 random distractors)
+      let maxTries = DEFAULT_TRIES;
+      let isStudentMode = false;
+
+      // Single-Round State
+      let secretCode = [];
+      let currentGuess = [null, null, null];
+      let guessHistory = []; // { words: string[], feedback: ('green'|'yellow'|'red')[] }[]
+      let isRoundOver = false;
+      let roundOutcome = null; // null | 'win' | 'lose'
+
+      // Teacher Settings Editor State
+      let editorWords = [...DEFAULT_WORDS];
+      let editorMaxTries = DEFAULT_TRIES;
+
+      // Cached Natural English Voice
+      let preferredVoice = null;
+
+      // ---------------------------------------------------------
+      // DOM REFERENCES
+      // ---------------------------------------------------------
+      const appWrapper = document.getElementById('app-wrapper');
+      const bombWidget = document.getElementById('bomb-widget');
+      const bombIconWrap = document.getElementById('bomb-icon-wrap');
+      const bombTimerLed = document.getElementById('bomb-timer-led');
+      const bombSegments = document.getElementById('bomb-segments');
+      const bombStatusBadge = document.getElementById('bomb-status-badge');
+
+      const headerRestartBtn = document.getElementById('header-restart-btn');
+      const settingsBtn = document.getElementById('settings-btn');
+
+      const tryBadge = document.getElementById('try-badge');
+      const displayStatusText = document.getElementById('display-status-text');
+      const displayStatusDot = document.getElementById('display-status-dot');
+      const guessSlotsEl = document.getElementById('guess-slots');
+      const checkBtn = document.getElementById('check-btn');
+      const clearBtn = document.getElementById('clear-btn');
+
+      const wordBankGrid = document.getElementById('word-bank-grid');
+      const guessHistoryList = document.getElementById('guess-history-list');
+      const historyCountPill = document.getElementById('history-count-pill');
+
+      // End-of-Round Modal
+      const roundModal = document.getElementById('round-modal');
+      const roundModalBadge = document.getElementById('round-modal-badge');
+      const roundModalEmoji = document.getElementById('round-modal-emoji');
+      const roundModalTitleEn = document.getElementById('round-modal-title-en');
+      const roundModalTitleZh = document.getElementById('round-modal-title-zh');
+      const roundModalSubtext = document.getElementById('round-modal-subtext');
+      const roundModalCode = document.getElementById('round-modal-code');
+      const playAgainBtn = document.getElementById('play-again-btn');
+
+      // Teacher Settings Modal
+      const settingsModal = document.getElementById('settings-modal');
+      const closeSettingsBtn = document.getElementById('close-settings-btn');
+      const tries5Btn = document.getElementById('tries-5-btn');
+      const tries6Btn = document.getElementById('tries-6-btn');
+      const settingsWordCount = document.getElementById('settings-word-count');
+      const settingsWordInputs = document.getElementById('settings-word-inputs');
+      const addWordBtn = document.getElementById('add-word-btn');
+      const generateLinkBtn = document.getElementById('generate-link-btn');
+      const studentLinkToast = document.getElementById('student-link-toast');
+      const studentLinkBox = document.getElementById('student-link-box');
+      const studentLinkInput = document.getElementById('student-link-input');
+      const copyLinkFallbackBtn = document.getElementById('copy-link-fallback-btn');
+      const resetDefaultsBtn = document.getElementById('reset-defaults-btn');
+      const saveSettingsBtn = document.getElementById('save-settings-btn');
+
+      const toastContainer = document.getElementById('toast-container');
+
+      // ---------------------------------------------------------
+      // UTILITIES & TOAST NOTIFICATIONS
+      // ---------------------------------------------------------
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function showToast(enText, zhText = '', type = 'info') {
+        const toast = document.createElement('div');
+        const colorMap = {
+          success: 'bg-[#34d399] text-slate-950 border-emerald-700',
+          error: 'bg-[#f87171] text-slate-950 border-red-800',
+          warning: 'bg-[#fbbf24] text-slate-950 border-amber-600',
+          info: 'bg-[#38bdf8] text-slate-950 border-sky-700'
+        };
+        toast.className = `pointer-events-auto px-4 py-2.5 rounded-2xl border-b-4 shadow-xl text-center animate-pop ${colorMap[type] || colorMap.info}`;
+        toast.innerHTML = `
+          <div class="text-sm font-bold leading-snug">${escapeHtml(enText)}</div>
+          ${zhText ? `<div class="text-xs font-semibold opacity-90">${escapeHtml(zhText)}</div>` : ''}
+        `;
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-8px)';
+          setTimeout(() => toast.remove(), 260);
+        }, 2400);
+      }
+
+      // Iframe-safe clipboard helper using execCommand('copy')
+      function copyTextToClipboard(text) {
+        try {
+          const temp = document.createElement('textarea');
+          temp.value = text;
+          temp.setAttribute('readonly', '');
+          temp.style.position = 'fixed';
+          temp.style.opacity = '0';
+          document.body.appendChild(temp);
+          temp.select();
+          const ok = document.execCommand('copy');
+          document.body.removeChild(temp);
+          return ok;
+        } catch (err) {
+          return false;
+        }
+      }
+
+      // ---------------------------------------------------------
+      // LOCALSTORAGE PERSISTENCE (STANDALONE FOR GITHUB PAGES)
+      // ---------------------------------------------------------
+      function loadWordsFromLocalStorage() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length >= MIN_WORDS) {
+            return parsed.slice(0, MAX_WORDS);
+          }
+        } catch (err) {
+          console.warn('Could not read localStorage:', err);
+        }
+        return null;
+      }
+
+      function saveWordsToLocalStorage(words) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+          return true;
+        } catch (err) {
+          console.warn('Could not save to localStorage:', err);
+          return false;
+        }
+      }
+
+      function loadTriesFromLocalStorage() {
+        try {
+          const raw = Number(localStorage.getItem(TRIES_STORAGE_KEY));
+          if (raw === 5 || raw === 6) return raw;
+        } catch (err) {
+          console.warn('Could not read tries from localStorage:', err);
+        }
+        return null;
+      }
+
+      function saveTriesToLocalStorage(tries) {
+        try {
+          localStorage.setItem(TRIES_STORAGE_KEY, String(tries));
+          return true;
+        } catch (err) {
+          console.warn('Could not save tries to localStorage:', err);
+          return false;
+        }
+      }
+
+      // ---------------------------------------------------------
+      // BUILT-IN DEVICE WEB SPEECH API (NO EXTERNAL APIS)
+      // ---------------------------------------------------------
+      function selectBestEnglishVoice() {
+        if (!('speechSynthesis' in window)) return null;
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) return null;
+
+        // Prioritize natural-sounding built-in English voices
+        const priorityKeywords = [
+          'Samantha',
+          'Google US English',
+          'Microsoft Aria Online (Natural)',
+          'Microsoft Jenny Online (Natural)',
+          'Microsoft Guy Online (Natural)',
+          'Natural',
+          'Microsoft Aria',
+          'Microsoft Jenny',
+          'Karen',
+          'Daniel',
+          'Ava',
+          'Alex'
+        ];
+
+        for (const keyword of priorityKeywords) {
+          const match = voices.find(
+            v => v.lang && v.lang.toLowerCase().startsWith('en') && v.name.toLowerCase().includes(keyword.toLowerCase())
+          );
+          if (match) return match;
+        }
+
+        return (
+          voices.find(v => v.lang && v.lang.toLowerCase() === 'en-us') ||
+          voices.find(v => v.lang && v.lang.toLowerCase() === 'en-gb') ||
+          voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en')) ||
+          null
+        );
+      }
+
+      if ('speechSynthesis' in window) {
+        preferredVoice = selectBestEnglishVoice();
+        window.speechSynthesis.onvoiceschanged = () => {
+          preferredVoice = selectBestEnglishVoice();
+        };
+      }
+
+      function speakWord(word, pulseEl = null) {
+        if (!word) return;
+        if (!('speechSynthesis' in window)) {
+          showToast('Speech is not supported on this browser.', '此瀏覽器不支援語音朗讀', 'warning');
+          return;
+        }
+
+        try {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(word);
+          utterance.lang = 'en-US';
+          utterance.rate = 0.85; // Clear ESL phonics pacing
+          utterance.pitch = 1.0;
+
+          if (!preferredVoice) {
+            preferredVoice = selectBestEnglishVoice();
+          }
+          if (preferredVoice) {
+            utterance.voice = preferredVoice;
+          }
+
+          if (pulseEl) {
+            pulseEl.classList.remove('speaking-pulse');
+            void pulseEl.offsetWidth;
+            pulseEl.classList.add('speaking-pulse');
+          }
+
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          console.warn('Speech synthesis error:', err);
+        }
+      }
+
+      // ---------------------------------------------------------
+      // CORE SINGLE-ROUND GAMEPLAY & INSTANT RESTART
+      // ---------------------------------------------------------
+      function shuffleArray(list) {
+        const arr = [...list];
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      // Picks 3 unique secret words + 3 other random unique words from the pool, then shuffles the 6 choices
+      function generateRoundWords() {
+        const shuffledPool = shuffleArray(wordBank);
+        const pickedSecret = shuffledPool.slice(0, CODE_LENGTH);
+        const distractorCount = Math.min(KEYPAD_CHOICES_COUNT - CODE_LENGTH, shuffledPool.length - CODE_LENGTH);
+        const distractors = shuffledPool.slice(CODE_LENGTH, CODE_LENGTH + distractorCount);
+        return {
+          secret: pickedSecret,
+          choices: shuffleArray([...pickedSecret, ...distractors])
+        };
+      }
+
+      // Starts or restarts a single round using the current active/saved word pool
+      function startRound() {
+        closeAllModals();
+        const roundData = generateRoundWords();
+        secretCode = roundData.secret;
+        roundChoices = roundData.choices;
+        currentGuess = [null, null, null];
+        guessHistory = [];
+        isRoundOver = false;
+        roundOutcome = null;
+        renderAll();
+      }
+
+      function handleWordCardClick(word, speakerEl) {
+        if (isRoundOver) return;
+        if (currentGuess.includes(word)) return;
+
+        speakWord(word, speakerEl);
+
+        const emptyIndex = currentGuess.indexOf(null);
+        if (emptyIndex === -1) {
+          showToast('All 3 slots are full! Tap Check Code.', '3 個密碼槽已滿！請按檢查密碼', 'info');
+          return;
+        }
+
+        currentGuess[emptyIndex] = word;
+        renderGuessSlots();
+        renderWordBank();
+      }
+
+      function handleRemoveSlot(index) {
+        if (isRoundOver) return;
+        if (currentGuess[index] === null) return;
+        currentGuess[index] = null;
+        renderGuessSlots();
+        renderWordBank();
+      }
+
+      function handleClearGuess() {
+        if (isRoundOver) return;
+        currentGuess = [null, null, null];
+        renderGuessSlots();
+        renderWordBank();
+      }
+
+      function handleCheckAnswer() {
+        if (isRoundOver) return;
+
+        if (currentGuess.includes(null)) {
+          guessSlotsEl.classList.remove('animate-shake');
+          void guessSlotsEl.offsetWidth;
+          guessSlotsEl.classList.add('animate-shake');
+          showToast('Pick 3 words to unlock the code!', '請先選出 3 個單字！', 'warning');
+          return;
+        }
+
+        const feedback = currentGuess.map((word, idx) => {
+          if (word === secretCode[idx]) return 'green';
+          if (secretCode.includes(word)) return 'yellow';
+          return 'red';
+        });
+
+        guessHistory.push({
+          words: [...currentGuess],
+          feedback
+        });
+
+        const isWin = feedback.every(f => f === 'green');
+        currentGuess = [null, null, null];
+
+        if (isWin) {
+          isRoundOver = true;
+          roundOutcome = 'win';
+          renderAll();
+          launchConfetti();
+          setTimeout(() => openRoundModal(true), 280);
+        } else if (guessHistory.length >= maxTries) {
+          isRoundOver = true;
+          roundOutcome = 'lose';
+          renderAll();
+          // Brief fun screen-shake on explosion
+          appWrapper.classList.remove('animate-screen-shake');
+          void appWrapper.offsetWidth;
+          appWrapper.classList.add('animate-screen-shake');
+          setTimeout(() => openRoundModal(false), 520);
+        } else {
+          renderAll();
+        }
+      }
+
+      // ---------------------------------------------------------
+      // RENDERING
+      // ---------------------------------------------------------
+      function renderAll() {
+        renderBombCountdown();
+        renderGuessSlots();
+        renderWordBank();
+        renderGuessHistory();
+      }
+
+      // Cute Cartoon/Tactical SVG Bomb with Animated Sparkling Fuse
+      function getBombSvg(accentColor, sparkColor, isWiggling) {
+        return `
+          <svg viewBox="0 0 40 40" class="w-8 h-8 ${isWiggling ? 'animate-bomb-wiggle' : ''}" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Fuse cord -->
+            <path d="M23 11 C25 6, 30 6, 32 8" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Animated spark -->
+            <g class="animate-spark">
+              <circle cx="33" cy="8" r="3" fill="${sparkColor}"/>
+              <path d="M33 2.5 V4.5 M33 11.5 V13.5 M27.5 8 H29.5 M36.5 8 H38.5 M29 4 L30.5 5.5 M35.5 10.5 L37 12 M37 4 L35.5 5.5 M30.5 10.5 L29 12" stroke="${sparkColor}" stroke-width="1.6" stroke-linecap="round"/>
+            </g>
+            <!-- Bomb cap -->
+            <rect x="15" y="10" width="9" height="4" rx="1.5" fill="#64748b" stroke="#94a3b8" stroke-width="1"/>
+            <!-- Bomb body -->
+            <circle cx="19.5" cy="24.5" r="11.5" fill="#1e293b" stroke="${accentColor}" stroke-width="2.2"/>
+            <!-- Cartoon shine highlight -->
+            <path d="M13 21.5 A6.5 6.5 0 0 1 18 16.5" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+            <!-- Cute tactical LED dot on bomb -->
+            <circle cx="22.5" cy="26.5" r="2.2" fill="${accentColor}"/>
+          </svg>
+        `;
+      }
+
+      // Defused Emerald Checkmark SVG
+      function getDefusedSvg() {
+        return `
+          <svg viewBox="0 0 40 40" class="w-8 h-8 animate-pop" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="20" cy="20" r="14" fill="rgba(52, 211, 153, 0.2)" stroke="#34d399" stroke-width="2.5"/>
+            <path d="M13 20.5 L18 25.5 L27.5 15" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        `;
+      }
+
+      function renderBombCountdown() {
+        const triesLeft = Math.max(0, maxTries - guessHistory.length);
+        const displayTry = Math.min(guessHistory.length + 1, maxTries);
+
+        // Update Current Guess try pill
+        tryBadge.textContent = `TRY ${displayTry} / ${maxTries} • 第 ${displayTry} / ${maxTries} 次`;
+
+        // Digital LED timer formatting (06, 05, 04, 03, 02, 01, 00)
+        bombTimerLed.textContent = String(triesLeft).padStart(2, '0');
+
+        // Determine dynamic tension state
+        let widgetClasses = 'flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-[#1e293b] border-2 border-b-4 transition-all duration-300 ';
+        let ledColorClass = '';
+        let badgeText = '';
+        let badgeClasses = 'font-spy text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border whitespace-nowrap ';
+        let segActiveClass = '';
+
+        if (roundOutcome === 'win') {
+          widgetClasses += 'border-[#34d399]/80 border-b-[#34d399] shadow-[0_0_18px_rgba(52,211,153,0.3)]';
+          ledColorClass = 'text-[#34d399] drop-shadow-[0_0_6px_rgba(52,211,153,0.65)]';
+          badgeText = 'DEFUSED! / 已拆彈！';
+          badgeClasses += 'bg-[#34d399]/20 text-[#34d399] border-[#34d399]/50';
+          segActiveClass = 'bg-[#34d399] shadow-[0_0_6px_rgba(52,211,153,0.7)]';
+          bombIconWrap.innerHTML = getDefusedSvg();
+        } else if (roundOutcome === 'lose' || triesLeft === 0) {
+          widgetClasses += 'border-[#f87171]/90 border-b-[#f87171] shadow-[0_0_20px_rgba(248,113,113,0.4)]';
+          ledColorClass = 'text-[#f87171] drop-shadow-[0_0_8px_rgba(248,113,113,0.75)]';
+          badgeText = 'BOOM! / 砰！';
+          badgeClasses += 'bg-[#f87171]/20 text-[#f87171] border-[#f87171]/50';
+          segActiveClass = 'bg-[#f87171]';
+          bombIconWrap.innerHTML = '<span class="text-2xl leading-none animate-pop" aria-hidden="true">💥</span>';
+        } else if (triesLeft === 1) {
+          widgetClasses += 'border-[#f87171]/85 border-b-[#f87171] animate-alert-pulse';
+          ledColorClass = 'text-[#f87171] drop-shadow-[0_0_8px_rgba(248,113,113,0.75)]';
+          badgeText = 'FINAL TRY! / 最後機會！';
+          badgeClasses += 'bg-[#f87171]/20 text-[#f87171] border-[#f87171]/50';
+          segActiveClass = 'bg-[#f87171] shadow-[0_0_6px_rgba(248,113,113,0.8)]';
+          bombIconWrap.innerHTML = getBombSvg('#f87171', '#fbbf24', true);
+        } else if (triesLeft <= 3) {
+          widgetClasses += 'border-[#fbbf24]/75 border-b-[#fbbf24] shadow-[0_0_16px_rgba(251,191,36,0.22)]';
+          ledColorClass = 'text-[#fbbf24] drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]';
+          badgeText = 'HURRY! / 快點！';
+          badgeClasses += 'bg-[#fbbf24]/20 text-[#fbbf24] border-[#fbbf24]/50';
+          segActiveClass = 'bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.65)]';
+          bombIconWrap.innerHTML = getBombSvg('#fbbf24', '#f87171', false);
+        } else {
+          widgetClasses += 'border-[#38bdf8]/65 border-b-[#38bdf8] shadow-[0_0_16px_rgba(56,189,248,0.2)]';
+          ledColorClass = 'text-[#38bdf8] drop-shadow-[0_0_6px_rgba(56,189,248,0.55)]';
+          badgeText = 'SAFE / 安全';
+          badgeClasses += 'bg-[#34d399]/15 text-[#34d399] border-[#34d399]/40';
+          segActiveClass = 'bg-[#34d399] shadow-[0_0_6px_rgba(52,211,153,0.65)]';
+          bombIconWrap.innerHTML = getBombSvg('#38bdf8', '#fbbf24', false);
+        }
+
+        bombWidget.className = widgetClasses;
+        bombTimerLed.className = `font-spy text-lg sm:text-xl font-bold tracking-wider ${ledColorClass}`;
+        bombStatusBadge.className = badgeClasses;
+        bombStatusBadge.textContent = badgeText;
+
+        // Render 5 or 6 segmented LED countdown cells
+        bombSegments.style.gridTemplateColumns = `repeat(${maxTries}, minmax(0, 1fr))`;
+        bombSegments.innerHTML = '';
+        for (let i = 0; i < maxTries; i++) {
+          const cell = document.createElement('div');
+          const isLit = i < triesLeft;
+          cell.className = `h-2 rounded-full transition-all duration-300 ${
+            isLit ? segActiveClass : 'bg-slate-800 border border-slate-700/80'
+          }`;
+          bombSegments.appendChild(cell);
+        }
+      }
+
+      function renderGuessSlots() {
+        guessSlotsEl.innerHTML = '';
+
+        const filledCount = currentGuess.filter(Boolean).length;
+        const nextEmptyIndex = currentGuess.indexOf(null);
+
+        // Update top digital screen status readout
+        if (filledCount === CODE_LENGTH) {
+          displayStatusText.textContent = '3 / 3 READY • 可檢查';
+          displayStatusText.className = 'font-spy text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-100';
+          displayStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-[#6ee7b7] shadow-[0_0_10px_#34d399]';
+        } else {
+          displayStatusText.textContent = `${filledCount} / ${CODE_LENGTH} ENTERED`;
+          displayStatusText.className = 'font-spy text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-200';
+          displayStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399]';
+        }
+
+        currentGuess.forEach((word, index) => {
+          const slot = document.createElement('button');
+          slot.type = 'button';
+          const slotCode = `CH-0${index + 1}`;
+
+          if (word) {
+            slot.className =
+              'btn-tactile relative h-24 sm:h-28 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border-2 border-[#34d399] text-white font-bold flex flex-col items-center justify-center px-2 shadow-[inset_0_0_18px_rgba(52,211,153,0.3),0_0_16px_rgba(52,211,153,0.32)] animate-pop';
+            slot.innerHTML = `
+              <span class="font-spy absolute top-1.5 left-2.5 text-[10px] font-bold text-[#6ee7b7]">${slotCode}</span>
+              <span class="absolute top-1.5 right-2.5 text-xs font-bold text-emerald-200/80 hover:text-white">✕</span>
+              <span class="lcd-word-glow text-2xl sm:text-3xl font-bold tracking-wide truncate max-w-full mt-2">${escapeHtml(word)}</span>
+              <span class="text-[10px] sm:text-[11px] font-semibold text-emerald-200/90 leading-none mt-1">Tap to clear</span>
+            `;
+            slot.addEventListener('click', () => handleRemoveSlot(index));
+          } else {
+            const isNextActive = index === nextEmptyIndex && !isRoundOver;
+            slot.className = `relative h-24 sm:h-28 py-2.5 rounded-xl bg-[#020d09]/90 border-2 ${
+              isNextActive
+                ? 'border-emerald-400/85 shadow-[inset_0_0_14px_rgba(52,211,153,0.22)]'
+                : 'border-emerald-900/90'
+            } text-emerald-600 flex flex-col items-center justify-center px-2 leading-tight`;
+            slot.innerHTML = `
+              <span class="font-spy absolute top-1.5 left-2.5 text-[10px] font-bold ${isNextActive ? 'text-[#34d399]' : 'text-emerald-700'}">${slotCode}</span>
+              <span class="font-spy text-xl sm:text-2xl font-bold tracking-widest mt-1.5 ${isNextActive ? 'text-[#34d399] animate-cursor' : 'text-emerald-800'}">${isNextActive ? '[ _ ]' : '---'}</span>
+              <span class="text-[11px] font-medium ${isNextActive ? 'text-emerald-200/90' : 'text-emerald-700'} mt-1">密碼 ${index + 1}</span>
+            `;
+            slot.disabled = true;
+          }
+
+          guessSlotsEl.appendChild(slot);
+        });
+      }
+
+      function renderWordBank() {
+        // Always displays the 6 round choices in a clean 2x3 (mobile) / 3x2 (desktop) keypad layout
+        wordBankGrid.className = 'grid grid-cols-2 sm:grid-cols-3 gap-3 pt-0.5';
+
+        wordBankGrid.innerHTML = '';
+
+        roundChoices.forEach((word, index) => {
+          const isUsed = currentGuess.includes(word);
+          const keyNum = String(index + 1).padStart(2, '0');
+
+          const card = document.createElement('div');
+          card.setAttribute('role', 'button');
+          card.setAttribute('tabindex', isUsed ? '-1' : '0');
+          card.className = `keypad-key relative flex items-center justify-between gap-2 pl-3.5 pr-2.5 pt-4 pb-3 rounded-2xl cursor-pointer ${
+            isUsed ? 'keypad-key-pressed' : ''
+          }`;
+
+          // Subtle monospace key number in top-left corner (01, 02, 03...)
+          const numTag = document.createElement('span');
+          numTag.className =
+            'font-spy absolute top-1 left-2.5 text-[10px] font-bold tracking-wider text-slate-400 select-none';
+          numTag.textContent = keyNum;
+
+          // Tiny key LED indicator (glows cyan when pressed/selected)
+          const keyLed = document.createElement('span');
+          keyLed.className = `absolute top-1.5 right-2.5 w-2 h-2 rounded-full transition-colors ${
+            isUsed
+              ? 'bg-[#38bdf8] shadow-[0_0_6px_#38bdf8]'
+              : 'bg-slate-300'
+          }`;
+          keyLed.setAttribute('aria-hidden', 'true');
+
+          // Bold dark navy English word (#0f172a) kept large & crystal clear
+          const wordLabel = document.createElement('span');
+          wordLabel.className = 'text-lg sm:text-xl font-bold text-[#0f172a] truncate select-none mt-1';
+          wordLabel.textContent = word;
+
+          // Separated circular speaker button on the right
+          const speakerBtn = document.createElement('button');
+          speakerBtn.type = 'button';
+          speakerBtn.setAttribute('aria-label', `Listen to ${word}`);
+          speakerBtn.title = `Listen / 聽發音: ${word}`;
+          speakerBtn.className =
+            'shrink-0 mt-1 w-9 h-9 rounded-full bg-sky-100 hover:bg-sky-200 active:bg-sky-300 border-2 border-sky-300 text-sky-900 flex items-center justify-center text-base shadow-xs transition-colors';
+          speakerBtn.textContent = '🔊';
+
+          // Pronounce only without adding to guess
+          speakerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speakWord(word, speakerBtn);
+          });
+
+          card.appendChild(numTag);
+          card.appendChild(keyLed);
+          card.appendChild(wordLabel);
+          card.appendChild(speakerBtn);
+
+          card.addEventListener('click', () => {
+            if (!isUsed) handleWordCardClick(word, speakerBtn);
+          });
+
+          card.addEventListener('keydown', (e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !isUsed) {
+              e.preventDefault();
+              handleWordCardClick(word, speakerBtn);
+            }
+          });
+
+          wordBankGrid.appendChild(card);
+        });
+      }
+
+      function renderGuessHistory() {
+        historyCountPill.textContent = `${guessHistory.length} / ${maxTries}`;
+        guessHistoryList.innerHTML = '';
+
+        // Always render all attempt rows (1 to maxTries)
+        for (let idx = 0; idx < maxTries; idx++) {
+          const entry = guessHistory[idx];
+          const row = document.createElement('div');
+          row.className = `flex items-center gap-3 ${entry ? 'animate-pop' : ''}`;
+
+          // Penciled margin number (1. - 6.) positioned left of the red margin line
+          const numBadge = document.createElement('div');
+          numBadge.className = `font-pencil w-7 text-center text-lg sm:text-xl font-bold shrink-0 select-none ${
+            entry ? 'text-slate-700' : 'text-slate-400/75'
+          }`;
+          numBadge.textContent = `${idx + 1}.`;
+
+          const chipsWrap = document.createElement('div');
+          chipsWrap.className = 'grid grid-cols-3 gap-2 flex-1 pl-1';
+
+          if (entry) {
+            entry.words.forEach((word, i) => {
+              const status = entry.feedback[i];
+              const tile = document.createElement('div');
+              let colorClasses = '';
+
+              if (status === 'green') {
+                colorClasses = 'pencil-mark-green';
+              } else if (status === 'yellow') {
+                colorClasses = 'pencil-mark-yellow';
+              } else {
+                colorClasses = 'pencil-mark-red';
+              }
+
+              // Subtle alternating tilt for a natural handwritten feel
+              const tiltClass = (idx + i) % 3 === 0 ? '-rotate-1' : (idx + i) % 3 === 1 ? 'rotate-1' : 'rotate-0';
+
+              tile.className = `pencil-text py-1.5 px-2 rounded-lg text-center text-xl sm:text-2xl font-bold truncate transition-transform ${colorClasses} ${tiltClass}`;
+              tile.textContent = word;
+              chipsWrap.appendChild(tile);
+            });
+          } else {
+            // Blank penciled underlines waiting to be written on
+            for (let s = 0; s < CODE_LENGTH; s++) {
+              const emptySlot = document.createElement('div');
+              emptySlot.className =
+                'h-10 border-b-2 border-dashed border-slate-400/55 flex items-end justify-center pb-1 font-pencil text-sm text-slate-400/60 select-none';
+              emptySlot.textContent = '· · ·';
+              chipsWrap.appendChild(emptySlot);
+            }
+          }
+
+          row.appendChild(numBadge);
+          row.appendChild(chipsWrap);
+          guessHistoryList.appendChild(row);
+        }
+      }
+
+      // ---------------------------------------------------------
+      // MODALS
+      // ---------------------------------------------------------
+      function closeAllModals() {
+        [roundModal, settingsModal].forEach(m => {
+          if (!m) return;
+          m.classList.add('hidden');
+          m.classList.remove('flex');
+        });
+      }
+
+      function openRoundModal(isWin) {
+        const triesUsed = guessHistory.length;
+
+        if (isWin) {
+          roundModalBadge.textContent = 'DEFUSED • 已拆彈';
+          roundModalBadge.className =
+            'font-spy inline-block text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-[#34d399]/15 text-[#34d399] border border-[#34d399]/40 mb-3';
+          roundModalEmoji.textContent = '🛡️';
+          roundModalTitleEn.textContent = '💣 BOMB DEFUSED!';
+          roundModalTitleZh.textContent = '成功拆彈！';
+          roundModalTitleZh.className = 'text-sm font-semibold text-[#34d399] mt-1';
+          roundModalSubtext.textContent = `Cracked in ${triesUsed} / ${maxTries} ${triesUsed === 1 ? 'try' : 'tries'} • 第 ${triesUsed} 次成功破解`;
+        } else {
+          roundModalBadge.textContent = 'TIME UP • 倒數歸零';
+          roundModalBadge.className =
+            'font-spy inline-block text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-[#f87171]/15 text-[#f87171] border border-[#f87171]/40 mb-3';
+          roundModalEmoji.textContent = '💥';
+          roundModalTitleEn.textContent = '💥 BOOM! NICE TRY!';
+          roundModalTitleZh.textContent = '砰！再接再厲！';
+          roundModalTitleZh.className = 'text-sm font-semibold text-[#fbbf24] mt-1';
+          roundModalSubtext.textContent = 'Listen to the secret code and try again! (聽聽看正確密碼，再挑戰一次！)';
+        }
+
+        roundModalCode.innerHTML = '';
+        secretCode.forEach(word => {
+          const card = document.createElement('button');
+          card.type = 'button';
+          card.className =
+            'btn-tactile flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-2xl bg-[#f8fafc] hover:bg-white border-2 border-[#34d399] border-b-4 border-b-emerald-600 text-[#0f172a]';
+          card.innerHTML = `
+            <span class="font-bold text-base sm:text-lg truncate max-w-full">${escapeHtml(word)}</span>
+            <span class="w-7 h-7 rounded-full bg-sky-100 border border-sky-300 text-sky-900 flex items-center justify-center text-xs">🔊</span>
+          `;
+          card.addEventListener('click', () => speakWord(word, card));
+          roundModalCode.appendChild(card);
+        });
+
+        roundModal.classList.remove('hidden');
+        roundModal.classList.add('flex');
+      }
+
+      // ---------------------------------------------------------
+      // TEACHER SETTINGS & STUDENT LINK GENERATION
+      // ---------------------------------------------------------
+      function openSettingsModal() {
+        if (isStudentMode || !settingsModal) return;
+        editorWords = [...wordBank];
+        editorMaxTries = maxTries;
+        studentLinkBox.classList.add('hidden');
+        studentLinkToast.classList.add('hidden');
+        renderTriesToggle();
+        renderSettingsInputs();
+        settingsModal.classList.remove('hidden');
+        settingsModal.classList.add('flex');
+      }
+
+      function renderTriesToggle() {
+        if (!tries5Btn || !tries6Btn) return;
+        const activeClasses =
+          'btn-tactile py-2 px-3 rounded-xl border-2 border-[#38bdf8] border-b-4 border-b-sky-600 bg-[#38bdf8]/20 text-white font-bold text-xs sm:text-sm flex flex-col items-center justify-center leading-tight shadow-[0_0_12px_rgba(56,189,248,0.2)] transition-colors';
+        const inactiveClasses =
+          'btn-tactile py-2 px-3 rounded-xl border-2 border-slate-700 border-b-4 border-b-slate-900 bg-slate-900/70 hover:bg-slate-800 text-slate-400 font-bold text-xs sm:text-sm flex flex-col items-center justify-center leading-tight transition-colors';
+
+        tries5Btn.className = editorMaxTries === 5 ? activeClasses : inactiveClasses;
+        tries6Btn.className = editorMaxTries === 6 ? activeClasses : inactiveClasses;
+      }
+
+      function renderSettingsInputs() {
+        settingsWordCount.textContent = `${editorWords.length} / ${MAX_WORDS} words`;
+        addWordBtn.disabled = editorWords.length >= MAX_WORDS;
+        addWordBtn.classList.toggle('opacity-50', editorWords.length >= MAX_WORDS);
+
+        settingsWordInputs.innerHTML = '';
+        editorWords.forEach((word, idx) => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center gap-1.5';
+
+          const num = document.createElement('span');
+          num.className = 'font-spy w-6 text-xs font-bold text-slate-400 text-right shrink-0';
+          num.textContent = `${idx + 1}.`;
+
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = word;
+          input.maxLength = 20;
+          input.placeholder = `Word ${idx + 1}`;
+          input.className =
+            'w-full px-3 py-2 rounded-xl bg-[#0b1120] border-2 border-slate-700 focus:border-[#38bdf8] focus:outline-none text-sm font-bold text-white placeholder-slate-500';
+          input.addEventListener('input', (e) => {
+            editorWords[idx] = e.target.value;
+          });
+
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.title = 'Delete word';
+          delBtn.textContent = '×';
+          const canDelete = editorWords.length > MIN_WORDS;
+          delBtn.disabled = !canDelete;
+          delBtn.className = `w-8 h-9 rounded-xl font-bold text-lg flex items-center justify-center shrink-0 transition-colors ${
+            canDelete
+              ? 'bg-[#ef4444]/15 hover:bg-[#ef4444]/30 text-red-300 border border-[#ef4444]/40'
+              : 'bg-slate-800 text-slate-600 border border-slate-700 cursor-not-allowed'
+          }`;
+          delBtn.addEventListener('click', () => {
+            if (editorWords.length <= MIN_WORDS) return;
+            editorWords.splice(idx, 1);
+            renderSettingsInputs();
+          });
+
+          row.appendChild(num);
+          row.appendChild(input);
+          row.appendChild(delBtn);
+          settingsWordInputs.appendChild(row);
+        });
+      }
+
+      function getCleanedEditorWords() {
+        const seen = new Set();
+        const cleaned = [];
+        for (const raw of editorWords) {
+          const w = raw.trim();
+          if (!w) continue;
+          const lower = w.toLowerCase();
+          if (!seen.has(lower)) {
+            seen.add(lower);
+            cleaned.push(w);
+          }
+        }
+        return cleaned;
+      }
+
+      function handleSaveSettings() {
+        const cleaned = getCleanedEditorWords();
+        if (cleaned.length < MIN_WORDS) {
+          showToast(`Please enter at least ${MIN_WORDS} unique words!`, `請至少輸入 ${MIN_WORDS} 個不重複的單字！`, 'error');
+          return;
+        }
+
+        wordBank = cleaned.slice(0, MAX_WORDS);
+        maxTries = editorMaxTries;
+        saveWordsToLocalStorage(wordBank);
+        saveTriesToLocalStorage(maxTries);
+        startRound();
+        showToast(`Saved! ${maxTries} tries per round.`, `已儲存設定！(每回合 ${maxTries} 次機會)`, 'success');
+      }
+
+      function handleGenerateStudentLink() {
+        const cleaned = getCleanedEditorWords();
+        if (cleaned.length < MIN_WORDS) {
+          showToast(`Enter at least ${MIN_WORDS} unique words first!`, `請先輸入至少 ${MIN_WORDS} 個不重複的單字！`, 'error');
+          return;
+        }
+
+        const baseUrl = window.location.href.split('?')[0];
+        const encodedWords = cleaned.map(w => encodeURIComponent(w)).join(',');
+        const studentUrl = `${baseUrl}?words=${encodedWords}&tries=${editorMaxTries}`;
+
+        studentLinkInput.value = studentUrl;
+        studentLinkBox.classList.remove('hidden');
+
+        const copied = copyTextToClipboard(studentUrl);
+        studentLinkToast.classList.remove('hidden');
+        if (copied) {
+          studentLinkToast.textContent = '✓ Link copied to clipboard! (已複製學生專屬連結！)';
+          showToast('Student link copied to clipboard!', '已複製學生專屬連結！', 'success');
+        } else {
+          studentLinkToast.textContent = '🔗 Link ready! Copy from the box below. (連結已產生！請從下方複製)';
+          showToast('Student link ready! Copy from the box below.', '連結已產生！請從下方欄位複製', 'info');
+        }
+      }
+
+      // ---------------------------------------------------------
+      // LIGHTWEIGHT CANVAS CONFETTI
+      // ---------------------------------------------------------
+      const confettiCanvas = document.getElementById('confetti-canvas');
+      const confettiCtx = confettiCanvas.getContext('2d');
+      let confettiParticles = [];
+      let confettiAnimId = null;
+
+      function launchConfetti() {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+        confettiCanvas.classList.remove('hidden');
+
+        const colors = ['#38bdf8', '#10b981', '#fbbf24', '#ef4444', '#a78bfa', '#f8fafc'];
+        confettiParticles = [];
+
+        for (let i = 0; i < 85; i++) {
+          confettiParticles.push({
+            x: window.innerWidth * (0.15 + Math.random() * 0.7),
+            y: -15 - Math.random() * 80,
+            w: 7 + Math.random() * 6,
+            h: 5 + Math.random() * 5,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            vx: (Math.random() - 0.5) * 6,
+            vy: 3 + Math.random() * 5,
+            rot: Math.random() * 360,
+            vRot: (Math.random() - 0.5) * 12
+          });
+        }
+
+        if (confettiAnimId) cancelAnimationFrame(confettiAnimId);
+        animateConfetti();
+      }
+
+      function animateConfetti() {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        let active = 0;
+
+        for (const p of confettiParticles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.12;
+          p.rot += p.vRot;
+
+          if (p.y < confettiCanvas.height + 20) {
+            active++;
+            confettiCtx.save();
+            confettiCtx.translate(p.x, p.y);
+            confettiCtx.rotate((p.rot * Math.PI) / 180);
+            confettiCtx.fillStyle = p.color;
+            confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            confettiCtx.restore();
+          }
+        }
+
+        if (active > 0) {
+          confettiAnimId = requestAnimationFrame(animateConfetti);
+        } else {
+          confettiCanvas.classList.add('hidden');
+          confettiAnimId = null;
+        }
+      }
+
+      window.addEventListener('resize', () => {
+        if (!confettiCanvas.classList.contains('hidden')) {
+          confettiCanvas.width = window.innerWidth;
+          confettiCanvas.height = window.innerHeight;
+        }
+      });
+
+      // ---------------------------------------------------------
+      // EVENT LISTENERS
+      // ---------------------------------------------------------
+      checkBtn.addEventListener('click', handleCheckAnswer);
+      clearBtn.addEventListener('click', handleClearGuess);
+
+      headerRestartBtn.addEventListener('click', () => {
+        startRound();
+        showToast('New secret code generated!', '已使用目前單字產生新密碼！', 'info');
+      });
+
+      playAgainBtn.addEventListener('click', startRound);
+
+      if (settingsBtn) {
+        settingsBtn.addEventListener('click', openSettingsModal);
+      }
+      if (closeSettingsBtn) {
+        closeSettingsBtn.addEventListener('click', closeAllModals);
+      }
+      if (tries5Btn) {
+        tries5Btn.addEventListener('click', () => {
+          editorMaxTries = 5;
+          renderTriesToggle();
+        });
+      }
+      if (tries6Btn) {
+        tries6Btn.addEventListener('click', () => {
+          editorMaxTries = 6;
+          renderTriesToggle();
+        });
+      }
+      if (addWordBtn) {
+        addWordBtn.addEventListener('click', () => {
+          if (editorWords.length < MAX_WORDS) {
+            editorWords.push('');
+            renderSettingsInputs();
+            const inputs = settingsWordInputs.querySelectorAll('input');
+            if (inputs.length > 0) inputs[inputs.length - 1].focus();
+          }
+        });
+      }
+      if (resetDefaultsBtn) {
+        resetDefaultsBtn.addEventListener('click', () => {
+          editorWords = [...DEFAULT_WORDS];
+          editorMaxTries = DEFAULT_TRIES;
+          renderTriesToggle();
+          renderSettingsInputs();
+          showToast('Restored defaults (8 words, 6 tries). Click Save to apply.', '已恢復預設值，請按儲存套用', 'info');
+        });
+      }
+      if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', handleSaveSettings);
+      }
+      if (generateLinkBtn) {
+        generateLinkBtn.addEventListener('click', handleGenerateStudentLink);
+      }
+      if (copyLinkFallbackBtn) {
+        copyLinkFallbackBtn.addEventListener('click', () => {
+          const ok = copyTextToClipboard(studentLinkInput.value);
+          showToast(ok ? 'Link copied!' : 'Select and copy the link.', ok ? '已複製連結！' : '請選取並複製連結', ok ? 'success' : 'info');
+        });
+      }
+      if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+          if (e.target === settingsModal) closeAllModals();
+        });
+      }
+
+      // ---------------------------------------------------------
+      // INITIALIZE ON LOAD
+      // ---------------------------------------------------------
+      window.addEventListener('load', () => {
+        const params = new URLSearchParams(window.location.search);
+        const customWordsParam = params.get('words');
+        const triesParam = Number(params.get('tries'));
+
+        if (triesParam === 5 || triesParam === 6) {
+          maxTries = triesParam;
+        }
+
+        if (customWordsParam) {
+          const parsed = customWordsParam
+            .split(',')
+            .map(w => w.trim())
+            .filter(Boolean);
+
+          const uniqueUrlWords = [];
+          const seen = new Set();
+          for (const w of parsed) {
+            if (!seen.has(w.toLowerCase())) {
+              seen.add(w.toLowerCase());
+              uniqueUrlWords.push(w);
+            }
+          }
+
+          if (uniqueUrlWords.length >= MIN_WORDS) {
+            wordBank = uniqueUrlWords.slice(0, MAX_WORDS);
+            isStudentMode = true;
+            // Locked Student Mode: completely remove Teacher Settings button & modal
+            if (settingsBtn) settingsBtn.remove();
+            if (settingsModal) settingsModal.remove();
+          }
+        } else {
+          // Teacher Mode: restore saved word bank & tries from localStorage if available
+          const savedWords = loadWordsFromLocalStorage();
+          if (savedWords) {
+            wordBank = savedWords;
+          }
+          if (triesParam !== 5 && triesParam !== 6) {
+            const savedTries = loadTriesFromLocalStorage();
+            if (savedTries) {
+              maxTries = savedTries;
+            }
+          }
+        }
+
+        startRound();
+      });
+    })();
+  </script>
+</body>
+</html>
